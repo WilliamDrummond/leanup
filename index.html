@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>LeanUp — 8-Week Fat Loss Contest</title>
+<title>LeanUp - 8-Week Fat Loss Contest</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230a0a0a'/><text y='72' x='50' text-anchor='middle' font-size='68' font-family='Arial Black,sans-serif' fill='%23e8ff47'>L</text></svg>"/>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
@@ -409,17 +409,17 @@ function Dashboard({ user, contest, logs, users, isAdmin }) {
     React.createElement('div', { className: 'stats-grid' },
       React.createElement('div', { className: 'stat yellow' },
         React.createElement('div', { className: 'stat-label' }, 'Starting Weight'),
-        React.createElement('div', { className: 'stat-value yellow' }, user.startWeight ? `${user.startWeight}kg` : '—'),
+        React.createElement('div', { className: 'stat-value yellow' }, user.startWeight ? `${user.startWeight}kg` : '-'),
         React.createElement('div', { className: 'stat-sub' }, user.startWeight ? 'your baseline' : 'log your first weigh-in')
       ),
       React.createElement('div', { className: 'stat green' },
         React.createElement('div', { className: 'stat-label' }, 'Current Weight'),
-        React.createElement('div', { className: 'stat-value green' }, last ? `${last.weight}kg` : '—'),
+        React.createElement('div', { className: 'stat-value green' }, last ? `${last.weight}kg` : '-'),
         last && user.startWeight && React.createElement('div', { className: 'stat-sub' }, `${pctSoFar > 0 ? '-' : '+'}${Math.abs(pctSoFar)}% from start`)
       ),
       React.createElement('div', { className: 'stat orange' },
         React.createElement('div', { className: 'stat-label' }, 'Your Rank'),
-        React.createElement('div', { className: 'stat-value orange' }, myRank > 0 ? `#${myRank}` : '—'),
+        React.createElement('div', { className: 'stat-value orange' }, myRank > 0 ? `#${myRank}` : '-'),
         React.createElement('div', { className: 'stat-sub' }, myRank > 0 ? `of ${lb.length} participants` : 'Log a weigh-in first')
       ),
       React.createElement('div', { className: 'stat blue' },
@@ -472,18 +472,18 @@ function MyStats({ user, logs, contest }) {
       ),
       React.createElement('div', { className: 'stat green' },
         React.createElement('div', { className: 'stat-label' }, 'Best Day Drop'),
-        React.createElement('div', { className: 'stat-value green' }, st.bestDrop > 0 ? `-${st.bestDrop}kg` : '—'),
+        React.createElement('div', { className: 'stat-value green' }, st.bestDrop > 0 ? `-${st.bestDrop}kg` : '-'),
         React.createElement('div', { className: 'stat-sub' }, 'biggest overnight drop recorded')
       ),
       React.createElement('div', { className: 'stat yellow' },
         React.createElement('div', { className: 'stat-label' }, 'Projected Finish'),
-        React.createElement('div', { className: 'stat-value yellow' }, st.projectedFinal ? `${st.projectedFinal}kg` : '—'),
+        React.createElement('div', { className: 'stat-value yellow' }, st.projectedFinal ? `${st.projectedFinal}kg` : '-'),
         st.daysLeft > 0 && React.createElement('div', { className: 'stat-sub' }, `-${st.projectedLoss}kg more in ${st.daysLeft} days`)
       ),
       React.createElement('div', { className: 'stat orange' },
         React.createElement('div', { className: 'stat-label' }, '7-Day Trend'),
         React.createElement('div', { className: `stat-value ${st.trend > 0 ? 'green' : st.trend < 0 ? 'orange' : 'blue'}` }, st.trend > 0.05 ? `↓ ${st.trend}kg` : st.trend < -0.05 ? `↑ ${Math.abs(st.trend)}kg` : '→ flat'),
-        React.createElement('div', { className: 'stat-sub' }, st.trend > 0.05 ? 'dropping nicely!' : st.trend < -0.05 ? 'slight gain — stay the course' : 'weight stable')
+        React.createElement('div', { className: 'stat-sub' }, st.trend > 0.05 ? 'dropping nicely!' : st.trend < -0.05 ? 'slight gain - stay the course' : 'weight stable')
       ),
       React.createElement('div', { className: 'stat blue' },
         React.createElement('div', { className: 'stat-label' }, 'Total Logs'),
@@ -520,7 +520,7 @@ function MyStats({ user, logs, contest }) {
             return React.createElement('tr', { key: l.id },
               React.createElement('td', null, fmtDate(l.date), isToday && React.createElement('span', { className: 'today-badge' }, 'Today')),
               React.createElement('td', null, l.weight),
-              React.createElement('td', { className: pct > 0 ? 'change-pos' : pct < 0 ? 'change-neg' : '' }, pct !== null ? `${pct > 0 ? '-' : '+'}${Math.abs(pct)}%` : '—'),
+              React.createElement('td', { className: pct > 0 ? 'change-pos' : pct < 0 ? 'change-neg' : '' }, pct !== null ? `${pct > 0 ? '-' : '+'}${Math.abs(pct)}%` : '-'),
               React.createElement('td', { className: change === null ? '' : change < 0 ? 'change-pos' : change > 0 ? 'change-neg' : 'change-zero' },
                 change === null ? 'First entry' : change < 0 ? `▼ ${Math.abs(change)}` : change > 0 ? `▲ ${change}` : '→ same'
               )
@@ -552,7 +552,7 @@ function Leaderboard({ users, logs, currentUser, contest }) {
 
   if (!lb.length) return React.createElement('div', { className: 'card' }, React.createElement('div', { className: 'empty' }, 'No participants have set their starting weight yet.'));
 
-  // Per-person colour palette — vivid, distinct
+  // Per-person colour palette - vivid, distinct
   const COLORS = ['#e8ff47','#ff6b35','#60a5fa','#f472b6','#34d399','#a78bfa','#fb923c','#22d3ee'];
 
   // Build the comparison chart data
@@ -590,7 +590,7 @@ function Leaderboard({ users, logs, currentUser, contest }) {
     const yTicks = [];
     for (let v = 0; v <= maxPct + yStep; v += yStep) yTicks.push(+v.toFixed(1));
 
-    // X axis ticks — week markers
+    // X axis ticks - week markers
     const xTicks = [1, 8, 15, 22, 29, 36, 43, 50, 56].filter(d => d <= maxDay + 3);
 
     return React.createElement('div', null,
@@ -636,7 +636,7 @@ function Leaderboard({ users, logs, currentUser, contest }) {
   return React.createElement('div', null,
     React.createElement('div', { className: 'card' },
       React.createElement('div', { className: 'card-title' }, '🏆 Leaderboard'),
-      React.createElement('p', { className: 'tip', style: { marginBottom: 16 } }, 'Ranked by % of starting body weight lost — totally fair regardless of how big or small you started.'),
+      React.createElement('p', { className: 'tip', style: { marginBottom: 16 } }, 'Ranked by % of starting body weight lost - totally fair regardless of how big or small you started.'),
       lb.map((u, i) => {
         const cls = rankCls[i] || '';
         const color = COLORS[i % COLORS.length];
@@ -692,7 +692,7 @@ function WeighIn({ user, setUser, contest, logs, refreshAll }) {
       setWeight('');
       setMsg(`✅ Logged! ${weight}kg`);
       setTimeout(() => setMsg(''), 4000);
-    } catch(ex) { setErr('Save failed — try again.'); }
+    } catch(ex) { setErr('Save failed - try again.'); }
     setSaving(false);
   }
 
@@ -736,7 +736,7 @@ function WeighIn({ user, setUser, contest, logs, refreshAll }) {
     ),
 
     React.createElement('div', { className: 'card' },
-      React.createElement('div', { className: 'card-title' }, `Daily Weigh-In — ${fmtDate(todayStr())}`),
+      React.createElement('div', { className: 'card-title' }, `Daily Weigh-In - ${fmtDate(todayStr())}`),
       loggedToday
         ? React.createElement('div', { style: { background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.25)', borderRadius: 10, padding: '16px 20px' } },
             React.createElement('div', { style: { fontSize: 18, fontWeight: 600, color: 'var(--success)', marginBottom: 4 } }, `✅ Today logged: ${loggedToday.weight}kg`),
@@ -744,7 +744,7 @@ function WeighIn({ user, setUser, contest, logs, refreshAll }) {
           )
         : React.createElement('div', null,
             status !== 'live' && React.createElement('div', { className: 'tip', style: { marginBottom: 12, color: 'var(--accent2)' } },
-              status === 'pending' ? '⏳ Contest hasn\'t started yet — you can still log your weight early!' : '🏁 Contest has ended.'
+              status === 'pending' ? '⏳ Contest hasn\'t started yet - you can still log your weight early!' : '🏁 Contest has ended.'
             ),
             React.createElement('div', { className: 'input-row' },
               React.createElement('div', { className: 'field' },
@@ -820,7 +820,7 @@ function Photos({ user, contest, photos, refreshAll }) {
         await db.insert('photos', { id: Date.now().toString(), user_id: user.id, name: user.name || user.username, week: week || 1, data_url: ev.target.result, date: todayStr(), ts: Date.now() });
         await refreshAll();
         setMsg('📸 Uploaded!'); setErr(''); setTimeout(() => setMsg(''), 3000);
-      } catch { setErr('Upload failed — try again.'); }
+      } catch { setErr('Upload failed - try again.'); }
       setUploading(false);
     };
     reader.readAsDataURL(file);
@@ -834,13 +834,13 @@ function Photos({ user, contest, photos, refreshAll }) {
     try {
       await db.delete('photos', { id });
       await refreshAll();
-    } catch { alert('Delete failed — try again.'); }
+    } catch { alert('Delete failed - try again.'); }
   }
 
   return React.createElement('div', null,
     React.createElement('div', { className: 'card' },
       React.createElement('div', { className: 'card-title' }, 'Upload Progress Photo'),
-      week && React.createElement('div', { className: 'tip', style: { marginBottom: 12 } }, `Week ${week} photo — tagged automatically.`),
+      week && React.createElement('div', { className: 'tip', style: { marginBottom: 12 } }, `Week ${week} photo - tagged automatically.`),
       React.createElement('div', { className: 'upload-zone', onClick: () => !uploading && fileRef.current.click() },
         React.createElement('input', { type: 'file', ref: fileRef, accept: 'image/*', onChange: handleFile }),
         React.createElement('div', { style: { fontSize: 36, marginBottom: 8 } }, uploading ? '⏳' : '📷'),
@@ -909,7 +909,7 @@ function Admin({ contest, users, logs, photos, refreshAll }) {
       await refreshAll();
       setNewName(''); setNewUser(''); setNewPass('');
       setMsg('✅ Participant added!'); setErr(''); setTimeout(() => setMsg(''), 2500);
-    } catch { setErr('Add failed — username may already exist.'); }
+    } catch { setErr('Add failed - username may already exist.'); }
     setSaving('');
   }
 
@@ -1005,7 +1005,7 @@ function Settings({ user, setUser }) {
       setUser(prev => ({ ...prev, email: trimmed }));
       setEmailMsg('✅ Email saved!');
       setTimeout(() => setEmailMsg(''), 3000);
-    } catch { setEmailErr('Save failed — try again.'); }
+    } catch { setEmailErr('Save failed - try again.'); }
     setSavingEmail(false);
   }
 
@@ -1025,7 +1025,7 @@ function Settings({ user, setUser }) {
       setCurPass(''); setNewPass(''); setConfirmPass('');
       setPassMsg('✅ Password changed!');
       setTimeout(() => setPassMsg(''), 3000);
-    } catch { setPassErr('Update failed — try again.'); }
+    } catch { setPassErr('Update failed - try again.'); }
     setSavingPass(false);
   }
 
