@@ -173,7 +173,7 @@ const db = {
 };
 
 // Map DB snake_case rows → app camelCase
-const mapUser = u => ({ id: u.id, username: u.username, password: u.password, role: u.role, name: u.name, startWeight: u.start_weight });
+const mapUser = u => ({ id: u.id, username: u.username, password: u.password, role: u.role, name: u.name, startWeight: u.start_weight, email: u.email || '' });
 const mapLog  = l => ({ id: l.id, userId: l.user_id, weight: l.weight, date: l.date, ts: l.ts });
 const mapPhoto = p => ({ id: p.id, userId: p.user_id, name: p.name, week: p.week, dataUrl: p.data_url, date: p.date, ts: p.ts });
 const mapContest = c => ({ startDate: c.start_date });
@@ -350,8 +350,8 @@ function AuthScreen({ onLogin }) {
 // TOPBAR
 function TopBar({ user, onLogout, tab, setTab, isAdmin }) {
   const tabs = isAdmin
-    ? ['Dashboard', 'My Stats', 'Leaderboard', 'Weigh-In', 'Photos', 'Admin']
-    : ['Dashboard', 'My Stats', 'Leaderboard', 'Weigh-In', 'Photos'];
+    ? ['Dashboard', 'My Stats', 'Leaderboard', 'Weigh-In', 'Photos', 'Admin', 'Settings']
+    : ['Dashboard', 'My Stats', 'Leaderboard', 'Weigh-In', 'Photos', 'Settings'];
   return React.createElement(React.Fragment, null,
     React.createElement('div', { className: 'topbar' },
       React.createElement('div', { className: 'topbar-logo' }, 'LeanUp'),
@@ -911,6 +911,88 @@ function Admin({ contest, users, logs, photos, refreshAll }) {
   );
 }
 
+// SETTINGS
+function Settings({ user, setUser }) {
+  const [email, setEmail] = useState(user.email || '');
+  const [emailMsg, setEmailMsg] = useState(''), [emailErr, setEmailErr] = useState(''), [savingEmail, setSavingEmail] = useState(false);
+
+  const [curPass, setCurPass] = useState(''), [newPass, setNewPass] = useState(''), [confirmPass, setConfirmPass] = useState('');
+  const [passMsg, setPassMsg] = useState(''), [passErr, setPassErr] = useState(''), [savingPass, setSavingPass] = useState(false);
+
+  async function saveEmail(e) {
+    e.preventDefault();
+    setEmailErr(''); setEmailMsg('');
+    const trimmed = email.trim();
+    if (trimmed && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) { setEmailErr('Enter a valid email address.'); return; }
+    setSavingEmail(true);
+    try {
+      await db.update('users', { id: user.id }, { email: trimmed });
+      setUser(prev => ({ ...prev, email: trimmed }));
+      setEmailMsg('✅ Email saved!');
+      setTimeout(() => setEmailMsg(''), 3000);
+    } catch { setEmailErr('Save failed — try again.'); }
+    setSavingEmail(false);
+  }
+
+  async function changePassword(e) {
+    e.preventDefault();
+    setPassErr(''); setPassMsg('');
+    if (!curPass) { setPassErr('Enter your current password.'); return; }
+    if (!newPass || newPass.length < 6) { setPassErr('New password must be at least 6 characters.'); return; }
+    if (newPass !== confirmPass) { setPassErr('Passwords do not match.'); return; }
+    setSavingPass(true);
+    try {
+      // Verify current password
+      const rows = await db.query('users', `?id=eq.${encodeURIComponent(user.id)}&password=eq.${encodeURIComponent(curPass)}&select=id`);
+      if (!rows.length) { setPassErr('Current password is incorrect.'); setSavingPass(false); return; }
+      await db.update('users', { id: user.id }, { password: newPass });
+      setUser(prev => ({ ...prev, password: newPass }));
+      setCurPass(''); setNewPass(''); setConfirmPass('');
+      setPassMsg('✅ Password changed!');
+      setTimeout(() => setPassMsg(''), 3000);
+    } catch { setPassErr('Update failed — try again.'); }
+    setSavingPass(false);
+  }
+
+  return React.createElement('div', null,
+    React.createElement('div', { className: 'card' },
+      React.createElement('div', { className: 'card-title' }, '✉️ Email Address'),
+      React.createElement('p', { className: 'tip', style: { marginBottom: 16 } }, 'Add or update the email associated with your account.'),
+      React.createElement('form', { onSubmit: saveEmail },
+        React.createElement('div', { className: 'field' },
+          React.createElement('label', null, 'Email'),
+          React.createElement('input', { type: 'email', value: email, onChange: e => setEmail(e.target.value), placeholder: 'you@example.com' })
+        ),
+        emailErr && React.createElement('div', { className: 'err', style: { textAlign: 'left', marginBottom: 8 } }, emailErr),
+        emailMsg && React.createElement('div', { style: { color: 'var(--success)', fontSize: 13, marginBottom: 8 } }, emailMsg),
+        React.createElement('button', { className: 'btn btn-sm', type: 'submit', disabled: savingEmail }, savingEmail ? 'Saving...' : 'Save Email')
+      )
+    ),
+
+    React.createElement('div', { className: 'card' },
+      React.createElement('div', { className: 'card-title' }, '🔒 Change Password'),
+      React.createElement('p', { className: 'tip', style: { marginBottom: 16 } }, 'Choose a new password. Must be at least 6 characters.'),
+      React.createElement('form', { onSubmit: changePassword },
+        React.createElement('div', { className: 'field' },
+          React.createElement('label', null, 'Current Password'),
+          React.createElement('input', { type: 'password', value: curPass, onChange: e => setCurPass(e.target.value), placeholder: '••••••••' })
+        ),
+        React.createElement('div', { className: 'field' },
+          React.createElement('label', null, 'New Password'),
+          React.createElement('input', { type: 'password', value: newPass, onChange: e => setNewPass(e.target.value), placeholder: '••••••••' })
+        ),
+        React.createElement('div', { className: 'field' },
+          React.createElement('label', null, 'Confirm New Password'),
+          React.createElement('input', { type: 'password', value: confirmPass, onChange: e => setConfirmPass(e.target.value), placeholder: '••••••••' })
+        ),
+        passErr && React.createElement('div', { className: 'err', style: { textAlign: 'left', marginBottom: 8 } }, passErr),
+        passMsg && React.createElement('div', { style: { color: 'var(--success)', fontSize: 13, marginBottom: 8 } }, passMsg),
+        React.createElement('button', { className: 'btn btn-sm', type: 'submit', disabled: savingPass }, savingPass ? 'Updating...' : 'Change Password')
+      )
+    )
+  );
+}
+
 // MAIN APP
 function App() {
   const [user, setUser] = useState(null);
@@ -954,7 +1036,8 @@ function App() {
       tab === 'Leaderboard' && React.createElement(Leaderboard, { users, logs, currentUser, contest }),
       tab === 'Weigh-In'    && React.createElement(WeighIn,     { user: currentUser, setUser: fn => setUser(typeof fn === 'function' ? fn(user) : fn), contest, logs, refreshAll }),
       tab === 'Photos'      && React.createElement(Photos,      { user: currentUser, contest, photos, refreshAll }),
-      tab === 'Admin'       && isAdmin && React.createElement(Admin, { contest, users, logs, photos, refreshAll })
+      tab === 'Admin'       && isAdmin && React.createElement(Admin, { contest, users, logs, photos, refreshAll }),
+      tab === 'Settings'    && React.createElement(Settings, { user: currentUser, setUser: fn => setUser(typeof fn === 'function' ? fn(user) : fn) })
     )
   );
 }
