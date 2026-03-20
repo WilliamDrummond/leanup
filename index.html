@@ -437,9 +437,26 @@ function Dashboard({ user, contest, logs, users, isAdmin }) {
 }
 
 // MY STATS
-function MyStats({ user, logs, contest }) {
+function MyStats({ user, logs, contest, refreshAll }) {
   const myLogs = logs.filter(l => l.userId === user.id).sort((a, b) => a.date.localeCompare(b.date));
   const st = calcStats(user, myLogs, contest);
+
+  async function editLog(log) {
+    const val = prompt(`Edit weight for ${fmtDate(log.date)}:`, log.weight);
+    if (!val || isNaN(val)) return;
+    try {
+      await db.update('logs', { id: log.id }, { weight: +val });
+      await refreshAll();
+    } catch { alert('Update failed.'); }
+  }
+
+  async function deleteLog(log) {
+    if (!confirm(`Delete log for ${fmtDate(log.date)}?`)) return;
+    try {
+      await db.delete('logs', { id: log.id });
+      await refreshAll();
+    } catch { alert('Delete failed.'); }
+  }
 
   if (!user.startWeight) return React.createElement('div', { className: 'card' },
     React.createElement('div', { className: 'empty' }, '⚖️ Log your first daily weight to unlock your stats!')
@@ -508,7 +525,8 @@ function MyStats({ user, logs, contest }) {
             React.createElement('th', null, 'Date'),
             React.createElement('th', null, 'Weight (kg)'),
             React.createElement('th', null, '% of Start'),
-            React.createElement('th', null, 'Change')
+            React.createElement('th', null, 'Change'),
+            React.createElement('th', null, 'Actions')
           )
         ),
         React.createElement('tbody', null,
@@ -523,6 +541,10 @@ function MyStats({ user, logs, contest }) {
               React.createElement('td', { className: pct > 0 ? 'change-pos' : pct < 0 ? 'change-neg' : '' }, pct !== null ? `${pct > 0 ? '-' : '+'}${Math.abs(pct)}%` : '—'),
               React.createElement('td', { className: change === null ? '' : change < 0 ? 'change-pos' : change > 0 ? 'change-neg' : 'change-zero' },
                 change === null ? 'First entry' : change < 0 ? `▼ ${Math.abs(change)}` : change > 0 ? `▲ ${change}` : '→ same'
+              ),
+              React.createElement('td', null,
+                React.createElement('button', { className: 'btn btn-sm btn-outline', style: { padding: '4px 8px', fontSize: 11, marginRight: 4 }, onClick: () => editLog(l) }, 'Edit'),
+                React.createElement('button', { className: 'btn btn-sm btn-outline', style: { padding: '4px 8px', fontSize: 11, color: 'var(--danger)', borderColor: 'var(--border)' }, onClick: () => deleteLog(l) }, 'Del')
               )
             );
           })
@@ -679,6 +701,7 @@ function WeighIn({ user, setUser, contest, logs, refreshAll }) {
     setErr(''); setMsg('');
     if (!weight || isNaN(weight) || +weight < 30 || +weight > 300) { setErr('Enter a valid weight in kg.'); return; }
     if (loggedToday) { setErr('Already logged today! Come back tomorrow.'); return; }
+    if (!window.confirm(`Confirm logging ${weight}kg for today?`)) return;
     setSaving(true);
     try {
       const logRow = { id: Date.now().toString(), user_id: user.id, weight: +weight, date: todayStr(), ts: Date.now() };
@@ -855,13 +878,51 @@ function Admin({ contest, users, logs, photos, refreshAll }) {
     } catch { alert('Reset failed.'); }
   }
 
+  async function editStartWeight(u) {
+    const val = prompt(`Enter new start weight for ${u.name || u.username}:`, u.startWeight || '');
+    if (!val || isNaN(val)) return;
+    try {
+      await db.update('users', { id: u.id }, { start_weight: +val });
+      await refreshAll();
+    } catch { alert('Update failed.'); }
+  }
+
+  async function logWeightForUser(u) {
+    const d = prompt(`Enter date for ${u.name || u.username} (YYYY-MM-DD):`, todayStr());
+    if (!d) return;
+    const val = prompt(`Enter weight for ${u.name || u.username} on ${d}:`);
+    if (!val || isNaN(val)) return;
+    try {
+      await db.insert('logs', { id: Date.now().toString(), user_id: u.id, weight: +val, date: d, ts: Date.now() });
+      await refreshAll();
+    } catch { alert('Log failed.'); }
+  }
+
+  function exportCSV() {
+    let csv = 'User ID,Name,Username,Date,Weight\n';
+    const sortedLogs = [...logs].sort((a, b) => a.date.localeCompare(b.date));
+    for (const log of sortedLogs) {
+      const u = users.find(x => x.id === log.userId) || { name: 'Unknown', username: 'unknown' };
+      csv += `${log.userId},"${u.name || ''}","${u.username}",${log.date},${log.weight}\n`;
+    }
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'weighins.csv';
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+  }
+
   const participants = users.filter(u => u.role !== 'admin');
   const status = getStatus(contest);
 
   return React.createElement('div', null,
     React.createElement('div', { className: 'card' },
-      React.createElement('div', { className: 'card-title' }, '⚙️ Contest Settings'),
-      React.createElement('div', { style: { marginBottom: 12, fontSize: 13 } }, 'Status: ',
+      React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+        React.createElement('div', { className: 'card-title', style: { margin: 0 } }, '⚙️ Contest Settings'),
+        React.createElement('button', { className: 'btn btn-sm btn-outline', onClick: exportCSV }, 'Export Data CSV')
+      ),
+      React.createElement('div', { style: { marginTop: 16, marginBottom: 12, fontSize: 13 } }, 'Status: ',
         status === 'live' && React.createElement('span', { className: 'contest-status live' }, React.createElement('span', { className: 'pulse' }), ' Live'),
         status === 'pending' && React.createElement('span', { className: 'contest-status pending' }, '⏳ Pending'),
         status === 'ended' && React.createElement('span', { className: 'contest-status ended' }, '🏁 Ended')
@@ -903,6 +964,8 @@ function Admin({ contest, users, logs, photos, refreshAll }) {
               last ? ` → ${last.weight}kg (${pctLost(u.startWeight, last.weight)}% lost)` : ''
             ),
             React.createElement('div', { style: { fontSize: 12, color: 'var(--muted)' } }, `${uLogs.length} days`),
+            React.createElement('button', { className: 'btn btn-sm btn-outline', onClick: () => logWeightForUser(u), style: { fontSize: 12 } }, 'Log Weight'),
+            React.createElement('button', { className: 'btn btn-sm btn-outline', onClick: () => editStartWeight(u), style: { fontSize: 12 } }, 'Edit Start'),
             React.createElement('button', { className: 'btn btn-sm btn-outline', onClick: () => resetLogs(u.id), style: { fontSize: 12 } }, 'Reset'),
             React.createElement('button', { className: 'btn btn-sm btn-danger', onClick: () => removeUser(u.id), style: { fontSize: 12 } }, 'Remove')
           );
@@ -1032,7 +1095,7 @@ function App() {
     React.createElement(TopBar, { user: currentUser, onLogout: () => { setUser(null); setTab('Dashboard'); }, tab, setTab, isAdmin }),
     React.createElement('div', { className: 'content' },
       tab === 'Dashboard'   && React.createElement(Dashboard,   { user: currentUser, contest, logs, users, isAdmin }),
-      tab === 'My Stats'    && React.createElement(MyStats,     { user: currentUser, logs, contest }),
+      tab === 'My Stats'    && React.createElement(MyStats,     { user: currentUser, logs, contest, refreshAll }),
       tab === 'Leaderboard' && React.createElement(Leaderboard, { users, logs, currentUser, contest }),
       tab === 'Weigh-In'    && React.createElement(WeighIn,     { user: currentUser, setUser: fn => setUser(typeof fn === 'function' ? fn(user) : fn), contest, logs, refreshAll }),
       tab === 'Photos'      && React.createElement(Photos,      { user: currentUser, contest, photos, refreshAll }),
