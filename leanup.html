@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LeanUp — 8-Week Fat Loss Contest</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230a0a0a'/><text y='72' x='50' text-anchor='middle' font-size='68' font-family='Arial Black,sans-serif' fill='%23e8ff47'>L</text></svg>"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0a0a0a; --surface: #141414; --surface2: #1e1e1e; --border: #2a2a2a;
+    --accent: #e8ff47; --accent2: #ff6b35; --text: #f0f0f0; --muted: #666;
+    --success: #4ade80; --danger: #f87171; --radius: 12px; --info: #60a5fa;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+
+  .auth-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; background: var(--bg); position: relative; overflow: hidden; }
+  .auth-bg { font-family: 'Bebas Neue'; font-size: clamp(100px,22vw,260px); color: rgba(232,255,71,0.03); position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); pointer-events: none; line-height: 0.9; text-align: center; white-space: pre; }
+  .auth-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 48px 40px; width: 100%; max-width: 420px; position: relative; z-index: 1; }
+  .auth-logo { font-family: 'Bebas Neue'; font-size: 52px; color: var(--accent); letter-spacing: 2px; margin-bottom: 4px; }
+  .auth-sub { color: var(--muted); font-size: 13px; margin-bottom: 36px; letter-spacing: 0.5px; text-transform: uppercase; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 6px; }
+  .field input, .field select { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; color: var(--text); font-family: 'DM Sans'; font-size: 15px; outline: none; transition: border-color 0.2s; }
+  .field input:focus, .field select:focus { border-color: var(--accent); }
+  .field select option { background: var(--surface2); }
+  .btn { width: 100%; padding: 14px; background: var(--accent); color: #000; font-family: 'Bebas Neue'; font-size: 20px; letter-spacing: 2px; border: none; border-radius: 8px; cursor: pointer; transition: opacity 0.2s, transform 0.1s; }
+  .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); font-family: 'DM Sans'; font-size: 14px; letter-spacing: 0; }
+  .btn-sm { width: auto; padding: 8px 18px; font-size: 14px; border-radius: 6px; }
+  .btn-danger { background: var(--danger); color: #000; }
+  .err { color: var(--danger); font-size: 13px; margin-top: 12px; text-align: center; }
+
+  .app { min-height: 100vh; display: flex; flex-direction: column; }
+  .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; height: 60px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .topbar-logo { font-family: 'Bebas Neue'; font-size: 28px; color: var(--accent); letter-spacing: 2px; }
+  .topbar-right { display: flex; align-items: center; gap: 16px; }
+  .topbar-user { font-size: 13px; color: var(--muted); }
+  .logout-btn { background: none; border: 1px solid var(--border); color: var(--muted); font-size: 12px; padding: 6px 12px; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+  .logout-btn:hover { border-color: var(--danger); color: var(--danger); }
+  .nav { display: flex; gap: 4px; padding: 16px 24px 0; border-bottom: 1px solid var(--border); background: var(--surface); overflow-x: auto; }
+  .nav-tab { padding: 10px 18px; font-size: 13px; font-weight: 500; color: var(--muted); border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.2s; white-space: nowrap; }
+  .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .nav-tab:hover:not(.active) { color: var(--text); }
+  .content { padding: 28px 24px; max-width: 980px; margin: 0 auto; width: 100%; flex: 1; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 20px; }
+  .card-title { font-family: 'Bebas Neue'; font-size: 22px; letter-spacing: 1px; color: var(--accent); margin-bottom: 16px; }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 20px; }
+  .stat { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 18px 16px; position: relative; overflow: hidden; }
+  .stat::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+  .stat.green::before { background: var(--success); }
+  .stat.yellow::before { background: var(--accent); }
+  .stat.orange::before { background: var(--accent2); }
+  .stat.blue::before { background: var(--info); }
+  .stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 8px; }
+  .stat-value { font-family: 'Bebas Neue'; font-size: 34px; line-height: 1; color: var(--text); }
+  .stat-value.green { color: var(--success); }
+  .stat-value.yellow { color: var(--accent); }
+  .stat-value.orange { color: var(--accent2); }
+  .stat-value.blue { color: var(--info); }
+  .stat-sub { font-size: 11px; color: var(--muted); margin-top: 5px; line-height: 1.4; }
+
+  .chart-wrap { width: 100%; overflow: hidden; }
+  .chart-svg { width: 100%; display: block; }
+
+  .lb-row { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 10px; margin-bottom: 6px; background: var(--surface2); border: 1px solid var(--border); }
+  .lb-row.gold { border-color: #f5c518; background: rgba(245,197,24,0.05); }
+  .lb-row.silver { border-color: #aaa; background: rgba(170,170,170,0.04); }
+  .lb-row.bronze { border-color: #cd7f32; background: rgba(205,127,50,0.04); }
+  .lb-rank { font-family: 'Bebas Neue'; font-size: 24px; color: var(--muted); text-align: center; }
+  .lb-rank.gold { color: #f5c518; } .lb-rank.silver { color: #aaa; } .lb-rank.bronze { color: #cd7f32; }
+  .lb-name { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+  .lb-dots { display: flex; gap: 3px; flex-wrap: wrap; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border); }
+  .dot.on { background: var(--accent); }
+  .dot.today { background: var(--accent2); }
+  .lb-right { text-align: right; }
+  .lb-pct { font-family: 'Bebas Neue'; font-size: 26px; color: var(--success); }
+  .lb-detail { font-family: 'DM Mono'; font-size: 11px; color: var(--muted); }
+
+  .log-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .log-table th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  .log-table td { padding: 10px 10px; border-bottom: 1px solid rgba(255,255,255,0.04); font-family: 'DM Mono'; }
+  .log-table tr:last-child td { border-bottom: none; }
+  .log-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .change-pos { color: var(--success); } .change-neg { color: var(--danger); } .change-zero { color: var(--muted); }
+
+  .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
+  .photo-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .photo-img { width: 100%; aspect-ratio: 3/4; object-fit: cover; display: block; }
+  .photo-meta { padding: 10px 12px; }
+  .photo-meta-name { font-weight: 600; font-size: 13px; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; font-family: 'DM Mono'; }
+  .tag-week { background: rgba(255,107,53,0.15); color: var(--accent2); }
+  .tag-day { background: rgba(232,255,71,0.12); color: var(--accent); }
+
+  .upload-zone { border: 2px dashed var(--border); border-radius: 8px; padding: 32px; text-align: center; cursor: pointer; transition: border-color 0.2s; }
+  .upload-zone:hover { border-color: var(--accent); }
+  .upload-zone input { display: none; }
+  .input-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+  .input-row .field { margin-bottom: 0; flex: 1; min-width: 120px; }
+  .tip { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .empty { text-align: center; padding: 48px; color: var(--muted); font-size: 14px; }
+  .user-row { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+  .user-row-name { font-weight: 600; flex: 1; min-width: 100px; }
+  .user-row-info { font-size: 12px; color: var(--muted); font-family: 'DM Mono'; }
+  .contest-status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 4px 10px; border-radius: 20px; font-weight: 600; }
+  .contest-status.live { background: rgba(74,222,128,0.1); color: var(--success); }
+  .contest-status.pending { background: rgba(232,255,71,0.1); color: var(--accent); }
+  .contest-status.ended { background: rgba(248,113,113,0.1); color: var(--danger); }
+  .pulse { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .progress-bar-wrap { background: var(--surface2); border-radius: 4px; height: 6px; overflow: hidden; }
+  .progress-bar { height: 100%; background: var(--accent); border-radius: 4px; }
+  .today-badge { background: rgba(232,255,71,0.12); color: var(--accent); font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600; margin-left: 6px; }
+
+  @media (max-width: 600px) {
+    .content { padding: 14px; } .auth-card { padding: 32px 20px; }
+    .card { padding: 16px; } .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script>
+const { useState, useEffect, useRef } = React;
+
+// ── SUPABASE CLIENT ───────────────────────────────────────────────────────────
+const SUPA_URL = 'https://ipyivpaxnfwbgljjlamj.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlweWl2cGF4bmZ3YmdsampsYW1qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5MDYyODEsImV4cCI6MjA4OTQ4MjI4MX0.lXh4wuiGgZdCPtJAfCYGHH84J4HU6vPVSH5791Oq3pM';
+
+const db = {
+  async query(table, params = '') {
+    const r = await fetch(`${SUPA_URL}/rest/v1/${table}${params}`, {
+      headers: { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}`, 'Content-Type': 'application/json' }
+    });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  },
+  async insert(table, body) {
+    const r = await fetch(`${SUPA_URL}/rest/v1/${table}`, {
+      method: 'POST',
+      headers: { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+      body: JSON.stringify(body)
+    });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  },
+  async update(table, match, body) {
+    const qs = Object.entries(match).map(([k,v]) => `${k}=eq.${encodeURIComponent(v)}`).join('&');
+    const r = await fetch(`${SUPA_URL}/rest/v1/${table}?${qs}`, {
+      method: 'PATCH',
+      headers: { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+      body: JSON.stringify(body)
+    });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  },
+  async delete(table, match) {
+    const qs = Object.entries(match).map(([k,v]) => `${k}=eq.${encodeURIComponent(v)}`).join('&');
+    const r = await fetch(`${SUPA_URL}/rest/v1/${table}?${qs}`, {
+      method: 'DELETE',
+      headers: { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}` }
+    });
+    if (!r.ok) throw new Error(await r.text());
+  }
+};
+
+// Map DB snake_case rows → app camelCase
+const mapUser = u => ({ id: u.id, username: u.username, password: u.password, role: u.role, name: u.name, startWeight: u.start_weight });
+const mapLog  = l => ({ id: l.id, userId: l.user_id, weight: l.weight, date: l.date, ts: l.ts });
+const mapPhoto = p => ({ id: p.id, userId: p.user_id, name: p.name, week: p.week, dataUrl: p.data_url, date: p.date, ts: p.ts });
+const mapContest = c => ({ startDate: c.start_date });
+
+async function loadAll() {
+  const [users, [contest], logs, photos] = await Promise.all([
+    db.query('users', '?select=*').then(r => r.map(mapUser)),
+    db.query('contest', '?select=*&id=eq.1').then(r => r.map(mapContest)),
+    db.query('logs', '?select=*&order=date.asc').then(r => r.map(mapLog)),
+    db.query('photos', '?select=*&order=ts.desc').then(r => r.map(mapPhoto)),
+  ]);
+  return { users, contest: contest || { startDate: null }, logs, photos };
+}
+
+const pctLost = (start, current) => +(((start - current) / start) * 100).toFixed(2);
+const todayStr = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Brisbane' });
+const fmtDate = d => new Date(d + 'T12:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+const daysBetween = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000);
+
+function contestDay(startDate) {
+  if (!startDate) return null;
+  const d = daysBetween(startDate, todayStr()) + 1;
+  return d < 1 ? null : d;
+}
+function contestWeek(startDate) {
+  const d = contestDay(startDate);
+  if (!d) return null;
+  return Math.min(Math.ceil(d / 7), 8);
+}
+function getStatus(contest) {
+  if (!contest.startDate) return 'pending';
+  const start = new Date(contest.startDate);
+  const end = new Date(start.getTime() + 56 * 86400000);
+  const now = new Date();
+  if (now < start) return 'pending';
+  if (now > end) return 'ended';
+  return 'live';
+}
+
+function calcStats(user, myLogs, contest) {
+  if (!myLogs.length) return null;
+  const sorted = [...myLogs].sort((a, b) => a.date.localeCompare(b.date));
+  const first = sorted[0], last = sorted[sorted.length - 1];
+  const totalLost = +(first.weight - last.weight).toFixed(2);
+  const weightPctLost = pctLost(first.weight, last.weight);
+  const daySpan = Math.max(daysBetween(first.date, last.date), 1);
+  const avgPerDay = +(totalLost / daySpan).toFixed(3);
+  const pacePerWeek = +(avgPerDay * 7).toFixed(2);
+
+  let bestDrop = 0, worstGain = 0;
+  for (let i = 1; i < sorted.length; i++) {
+    const diff = +(sorted[i - 1].weight - sorted[i].weight).toFixed(2);
+    if (diff > bestDrop) bestDrop = diff;
+    if (diff < worstGain) worstGain = diff;
+  }
+
+  // Streak
+  let streak = 0;
+  const logSet = new Set(sorted.map(l => l.date));
+  let check = todayStr();
+  while (logSet.has(check)) {
+    streak++;
+    const d = new Date(check); d.setDate(d.getDate() - 1);
+    check = d.toISOString().slice(0, 10);
+  }
+
+  // Projection
+  let daysLeft = 0, projectedFinal = null, projectedLoss = 0;
+  if (contest.startDate) {
+    const endDate = new Date(new Date(contest.startDate).getTime() + 56 * 86400000).toISOString().slice(0, 10);
+    daysLeft = Math.max(0, daysBetween(todayStr(), endDate));
+    projectedLoss = +(avgPerDay * daysLeft).toFixed(2);
+    projectedFinal = +(last.weight - projectedLoss).toFixed(1);
+  }
+
+  // 7-day trend
+  const recent7 = sorted.slice(-7);
+  const trend = recent7.length >= 2 ? +(recent7[0].weight - recent7[recent7.length - 1].weight).toFixed(2) : 0;
+
+  return { first, last, sorted, totalLost, weightPctLost, avgPerDay, pacePerWeek, bestDrop, worstGain, streak, daysLeft, projectedFinal, projectedLoss, trend };
+}
+
+function buildLB(users, logs) {
+  return users
+    .filter(u => u.role !== 'admin' && u.startWeight)
+    .map(u => {
+      const myLogs = logs.filter(l => l.userId === u.id).sort((a, b) => a.date.localeCompare(b.date));
+      const last = myLogs[myLogs.length - 1];
+      const currentWeight = last ? last.weight : u.startWeight;
+      const weightPctLost = pctLost(u.startWeight, currentWeight);
+      return { ...u, currentWeight, weightPctLost, logCount: myLogs.length, logDates: new Set(myLogs.map(l => l.date)) };
+    })
+    .sort((a, b) => b.weightPctLost - a.weightPctLost);
+}
+
+// SVG Chart
+function SparkChart({ logs, height = 160 }) {
+  const W = 600, H = height, PL = 52, PR = 20, PT = 16, PB = 36;
+  const recent = logs.slice(-30);
+  if (recent.length < 2) return React.createElement('div', { className: 'empty', style: { padding: 24 } }, 'Log at least 2 days to see your chart 📈');
+
+  const weights = recent.map(l => l.weight);
+  const minW = Math.min(...weights) - 0.5;
+  const maxW = Math.max(...weights) + 0.5;
+  const xs = i => PL + (i / (recent.length - 1)) * (W - PL - PR);
+  const ys = w => PT + ((maxW - w) / (maxW - minW)) * (H - PT - PB);
+  const pts = recent.map((l, i) => [xs(i), ys(l.weight)]);
+  const linePath = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+  const areaPath = linePath + ` L${pts[pts.length-1][0].toFixed(1)},${(H-PB).toFixed(1)} L${PL},${(H-PB).toFixed(1)} Z`;
+
+  // Y ticks
+  const yTicks = [minW, minW + (maxW - minW) * 0.25, minW + (maxW - minW) * 0.5, minW + (maxW - minW) * 0.75, maxW].map(v => ({ v: +v.toFixed(1), y: ys(v) }));
+  // X labels
+  const xIdxs = recent.length <= 7 ? recent.map((_, i) => i) : [0, Math.floor(recent.length / 3), Math.floor(recent.length * 2 / 3), recent.length - 1];
+
+  // Trend line
+  const n = pts.length, sx = pts.reduce((s, _, i) => s + i, 0), sy = pts.reduce((s, p) => s + p[1], 0);
+  const sxy = pts.reduce((s, p, i) => s + i * p[1], 0), sx2 = pts.reduce((s, _, i) => s + i * i, 0);
+  const slope = (n * sxy - sx * sy) / (n * sx2 - sx * sx);
+  const intercept = (sy - slope * sx) / n;
+
+  return React.createElement('div', { className: 'chart-wrap' },
+    React.createElement('svg', { viewBox: `0 0 ${W} ${H}`, style: { width: '100%', display: 'block' }, preserveAspectRatio: 'none' },
+      React.createElement('defs', null,
+        React.createElement('linearGradient', { id: 'ag', x1: 0, y1: 0, x2: 0, y2: 1 },
+          React.createElement('stop', { offset: '0%', stopColor: '#e8ff47', stopOpacity: 0.18 }),
+          React.createElement('stop', { offset: '100%', stopColor: '#e8ff47', stopOpacity: 0 })
+        )
+      ),
+      yTicks.map((t, i) => React.createElement('g', { key: i },
+        React.createElement('line', { x1: PL, y1: t.y, x2: W - PR, y2: t.y, stroke: '#2a2a2a', strokeWidth: 1 }),
+        React.createElement('text', { x: PL - 6, y: t.y + 4, textAnchor: 'end', fill: '#666', fontSize: 10, fontFamily: 'DM Mono' }, t.v)
+      )),
+      xIdxs.map(i => React.createElement('text', { key: i, x: xs(i), y: H - PB + 18, textAnchor: 'middle', fill: '#666', fontSize: 10, fontFamily: 'DM Mono' }, fmtDate(recent[i].date))),
+      React.createElement('line', { x1: xs(0), y1: intercept, x2: xs(n-1), y2: slope*(n-1)+intercept, stroke: '#ff6b35', strokeWidth: 1.5, strokeDasharray: '5 4', opacity: 0.7 }),
+      React.createElement('path', { d: areaPath, fill: 'url(#ag)' }),
+      React.createElement('path', { d: linePath, fill: 'none', stroke: '#e8ff47', strokeWidth: 2.5, strokeLinecap: 'round', strokeLinejoin: 'round' }),
+      pts.map((p, i) => {
+        const isToday = recent[i].date === todayStr();
+        return React.createElement('circle', { key: i, cx: p[0], cy: p[1], r: isToday ? 5 : 3, fill: isToday ? '#ff6b35' : '#e8ff47' });
+      })
+    )
+  );
+}
+
+// AUTH
+function AuthScreen({ onLogin }) {
+  const [u, setU] = useState(''), [p, setP] = useState(''), [err, setErr] = useState(''), [loading, setLoading] = useState(false);
+  async function login(e) {
+    e.preventDefault();
+    setLoading(true); setErr('');
+    try {
+      const rows = await db.query('users', `?username=eq.${encodeURIComponent(u)}&password=eq.${encodeURIComponent(p)}&select=*`);
+      if (rows.length) onLogin(mapUser(rows[0]));
+      else setErr('Invalid username or password.');
+    } catch(ex) { setErr('Error: ' + (ex.message || ex)); }
+    setLoading(false);
+  }
+  return React.createElement('div', { className: 'auth-wrap' },
+    React.createElement('div', { className: 'auth-bg' }, 'LEAN\nUP'),
+    React.createElement('div', { className: 'auth-card' },
+      React.createElement('div', { className: 'auth-logo' }, 'LeanUp'),
+      React.createElement('div', { className: 'auth-sub' }, '8-Week Fat Loss Contest'),
+      React.createElement('form', { onSubmit: login },
+        React.createElement('div', { className: 'field' }, React.createElement('label', null, 'Username'), React.createElement('input', { value: u, onChange: e => setU(e.target.value), placeholder: 'username' })),
+        React.createElement('div', { className: 'field' }, React.createElement('label', null, 'Password'), React.createElement('input', { type: 'password', value: p, onChange: e => setP(e.target.value), placeholder: '••••••••' })),
+        err && React.createElement('div', { className: 'err' }, err),
+        React.createElement('button', { className: 'btn', type: 'submit', style: { marginTop: 20 }, disabled: loading }, loading ? 'Signing In...' : 'Sign In')
+      )
+    )
+  );
+}
+
+// TOPBAR
+function TopBar({ user, onLogout, tab, setTab, isAdmin }) {
+  const tabs = isAdmin
+    ? ['Dashboard', 'My Stats', 'Leaderboard', 'Weigh-In', 'Photos', 'Admin']
+    : ['Dashboard', 'My Stats', 'Leaderboard', 'Weigh-In', 'Photos'];
+  return React.createElement(React.Fragment, null,
+    React.createElement('div', { className: 'topbar' },
+      React.createElement('div', { className: 'topbar-logo' }, 'LeanUp'),
+      React.createElement('div', { className: 'topbar-right' },
+        React.createElement('span', { className: 'topbar-user' }, user.name || user.username),
+        React.createElement('button', { className: 'logout-btn', onClick: onLogout }, 'Sign Out')
+      )
+    ),
+    React.createElement('div', { className: 'nav' },
+      tabs.map(t => React.createElement('button', { key: t, className: `nav-tab${tab === t ? ' active' : ''}`, onClick: () => setTab(t) }, t))
+    )
+  );
+}
+
+// DASHBOARD
+function Dashboard({ user, contest, logs, users, isAdmin }) {
+  const status = getStatus(contest);
+  const week = contestWeek(contest.startDate);
+  const day = contestDay(contest.startDate);
+  const myLogs = logs.filter(l => l.userId === user.id).sort((a, b) => a.date.localeCompare(b.date));
+  const last = myLogs[myLogs.length - 1];
+  const lb = buildLB(users, logs);
+  const myRank = lb.findIndex(u => u.id === user.id) + 1;
+  const loggedToday = myLogs.some(l => l.date === todayStr());
+  const pctSoFar = user.startWeight && last ? pctLost(user.startWeight, last.weight) : null;
+
+  return React.createElement('div', null,
+    React.createElement('div', { className: 'card', style: { display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'center' } },
+      React.createElement('div', { style: { flex: 1 } },
+        React.createElement('div', { style: { marginBottom: 10 } },
+          status === 'live' && React.createElement('span', { className: 'contest-status live' }, React.createElement('span', { className: 'pulse' }), ` Week ${week} · Day ${day} of 56`),
+          status === 'pending' && React.createElement('span', { className: 'contest-status pending' }, '⏳ Contest Not Started'),
+          status === 'ended' && React.createElement('span', { className: 'contest-status ended' }, '🏁 Contest Ended')
+        ),
+        status === 'live' && React.createElement(React.Fragment, null,
+          React.createElement('div', { className: 'progress-bar-wrap' },
+            React.createElement('div', { className: 'progress-bar', style: { width: `${(day / 56) * 100}%` } })
+          ),
+          React.createElement('div', { className: 'tip', style: { marginTop: 6 } }, `${56 - day} days remaining in the contest`)
+        ),
+        !contest.startDate && React.createElement('div', { className: 'tip' }, 'Admin hasn\'t set a start date yet.')
+      ),
+      !loggedToday && status === 'live' && React.createElement('div', { style: { background: 'rgba(255,107,53,0.1)', border: '1px solid rgba(255,107,53,0.3)', borderRadius: 10, padding: '14px 18px', textAlign: 'center', minWidth: 160 } },
+        React.createElement('div', { style: { fontSize: 24, marginBottom: 4 } }, '⚖️'),
+        React.createElement('div', { style: { fontWeight: 600, fontSize: 14 } }, "Log today's weight!"),
+        React.createElement('div', { className: 'tip' }, 'Keep your streak alive')
+      ),
+      loggedToday && last && React.createElement('div', { style: { background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: 10, padding: '14px 18px', textAlign: 'center', minWidth: 160 } },
+        React.createElement('div', { style: { fontSize: 24, marginBottom: 4 } }, '✅'),
+        React.createElement('div', { style: { fontWeight: 600, fontSize: 14, color: 'var(--success)' } }, `Today: ${last.weight}kg`),
+        React.createElement('div', { className: 'tip' }, pctSoFar !== null ? `Down ${pctSoFar}% from start` : '')
+      )
+    ),
+
+    React.createElement('div', { className: 'stats-grid' },
+      React.createElement('div', { className: 'stat yellow' },
+        React.createElement('div', { className: 'stat-label' }, 'Starting Weight'),
+        React.createElement('div', { className: 'stat-value yellow' }, user.startWeight ? `${user.startWeight}kg` : '—'),
+        React.createElement('div', { className: 'stat-sub' }, user.startWeight ? 'your baseline' : 'log your first weigh-in')
+      ),
+      React.createElement('div', { className: 'stat green' },
+        React.createElement('div', { className: 'stat-label' }, 'Current Weight'),
+        React.createElement('div', { className: 'stat-value green' }, last ? `${last.weight}kg` : '—'),
+        last && user.startWeight && React.createElement('div', { className: 'stat-sub' }, `${pctSoFar > 0 ? '-' : '+'}${Math.abs(pctSoFar)}% from start`)
+      ),
+      React.createElement('div', { className: 'stat orange' },
+        React.createElement('div', { className: 'stat-label' }, 'Your Rank'),
+        React.createElement('div', { className: 'stat-value orange' }, myRank > 0 ? `#${myRank}` : '—'),
+        React.createElement('div', { className: 'stat-sub' }, myRank > 0 ? `of ${lb.length} participants` : 'Log a weigh-in first')
+      ),
+      React.createElement('div', { className: 'stat blue' },
+        React.createElement('div', { className: 'stat-label' }, 'Days Logged'),
+        React.createElement('div', { className: 'stat-value blue' }, myLogs.length),
+        React.createElement('div', { className: 'stat-sub' }, status === 'live' ? `of ${day} days elapsed` : 'total entries')
+      )
+    ),
+
+    myLogs.length >= 2 && React.createElement('div', { className: 'card' },
+      React.createElement('div', { className: 'card-title' }, 'Weight Trend'),
+      React.createElement(SparkChart, { logs: myLogs, height: 130 })
+    )
+  );
+}
+
+// MY STATS
+function MyStats({ user, logs, contest }) {
+  const myLogs = logs.filter(l => l.userId === user.id).sort((a, b) => a.date.localeCompare(b.date));
+  const st = calcStats(user, myLogs, contest);
+
+  if (!user.startWeight) return React.createElement('div', { className: 'card' },
+    React.createElement('div', { className: 'empty' }, '⚖️ Log your first daily weight to unlock your stats!')
+  );
+  if (!st) return React.createElement('div', { className: 'card' },
+    React.createElement('div', { className: 'empty' }, 'Log your first daily weight to see stats!')
+  );
+
+  return React.createElement('div', null,
+    React.createElement('div', { className: 'stats-grid' },
+      React.createElement('div', { className: 'stat green' },
+        React.createElement('div', { className: 'stat-label' }, 'Total Lost'),
+        React.createElement('div', { className: `stat-value ${st.totalLost > 0 ? 'green' : 'orange'}` }, st.totalLost > 0 ? `-${st.totalLost}kg` : `+${Math.abs(st.totalLost)}kg`),
+        React.createElement('div', { className: 'stat-sub' }, `${st.first.weight}kg → ${st.last.weight}kg`)
+      ),
+      React.createElement('div', { className: 'stat yellow' },
+        React.createElement('div', { className: 'stat-label' }, '% of Start Weight Lost'),
+        React.createElement('div', { className: 'stat-value yellow' }, st.weightPctLost > 0 ? `-${st.weightPctLost}%` : `+${Math.abs(st.weightPctLost)}%`),
+        React.createElement('div', { className: 'stat-sub' }, `${st.first.weight}kg start · ${st.last.weight}kg now`)
+      ),
+      React.createElement('div', { className: 'stat orange' },
+        React.createElement('div', { className: 'stat-label' }, 'Avg per Day'),
+        React.createElement('div', { className: `stat-value ${st.avgPerDay > 0 ? 'green' : 'orange'}` }, st.avgPerDay > 0 ? `-${st.avgPerDay}kg` : `+${Math.abs(st.avgPerDay)}kg`),
+        React.createElement('div', { className: 'stat-sub' }, `≈ ${st.pacePerWeek}kg per week`)
+      ),
+      React.createElement('div', { className: 'stat blue' },
+        React.createElement('div', { className: 'stat-label' }, 'Day Streak 🔥'),
+        React.createElement('div', { className: 'stat-value blue' }, st.streak),
+        React.createElement('div', { className: 'stat-sub' }, st.streak > 0 ? 'consecutive days logged' : 'Log today to start a streak!')
+      ),
+      React.createElement('div', { className: 'stat green' },
+        React.createElement('div', { className: 'stat-label' }, 'Best Day Drop'),
+        React.createElement('div', { className: 'stat-value green' }, st.bestDrop > 0 ? `-${st.bestDrop}kg` : '—'),
+        React.createElement('div', { className: 'stat-sub' }, 'biggest overnight drop recorded')
+      ),
+      React.createElement('div', { className: 'stat yellow' },
+        React.createElement('div', { className: 'stat-label' }, 'Projected Finish'),
+        React.createElement('div', { className: 'stat-value yellow' }, st.projectedFinal ? `${st.projectedFinal}kg` : '—'),
+        st.daysLeft > 0 && React.createElement('div', { className: 'stat-sub' }, `-${st.projectedLoss}kg more in ${st.daysLeft} days`)
+      ),
+      React.createElement('div', { className: 'stat orange' },
+        React.createElement('div', { className: 'stat-label' }, '7-Day Trend'),
+        React.createElement('div', { className: `stat-value ${st.trend > 0 ? 'green' : st.trend < 0 ? 'orange' : 'blue'}` }, st.trend > 0.05 ? `↓ ${st.trend}kg` : st.trend < -0.05 ? `↑ ${Math.abs(st.trend)}kg` : '→ flat'),
+        React.createElement('div', { className: 'stat-sub' }, st.trend > 0.05 ? 'dropping nicely!' : st.trend < -0.05 ? 'slight gain — stay the course' : 'weight stable')
+      ),
+      React.createElement('div', { className: 'stat blue' },
+        React.createElement('div', { className: 'stat-label' }, 'Total Logs'),
+        React.createElement('div', { className: 'stat-value blue' }, myLogs.length),
+        React.createElement('div', { className: 'stat-sub' }, `out of ${getStatus(contest) === 'live' ? contestDay(contest.startDate) : 56} possible days`)
+      )
+    ),
+
+    React.createElement('div', { className: 'card' },
+      React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 } },
+        React.createElement('div', { className: 'card-title', style: { margin: 0 } }, 'Weight Chart (last 30 days)'),
+        React.createElement('div', { className: 'tip' }, '🟡 weight  🔸 trend line')
+      ),
+      React.createElement(SparkChart, { logs: myLogs, height: 200 })
+    ),
+
+    React.createElement('div', { className: 'card' },
+      React.createElement('div', { className: 'card-title' }, 'Daily Log History'),
+      React.createElement('table', { className: 'log-table' },
+        React.createElement('thead', null,
+          React.createElement('tr', null,
+            React.createElement('th', null, 'Date'),
+            React.createElement('th', null, 'Weight (kg)'),
+            React.createElement('th', null, '% of Start'),
+            React.createElement('th', null, 'Change')
+          )
+        ),
+        React.createElement('tbody', null,
+          [...myLogs].reverse().map((l, i, arr) => {
+            const prev = arr[i + 1];
+            const change = prev ? +(l.weight - prev.weight).toFixed(2) : null;
+            const isToday = l.date === todayStr();
+            const pct = user.startWeight ? pctLost(user.startWeight, l.weight) : null;
+            return React.createElement('tr', { key: l.id },
+              React.createElement('td', null, fmtDate(l.date), isToday && React.createElement('span', { className: 'today-badge' }, 'Today')),
+              React.createElement('td', null, l.weight),
+              React.createElement('td', { className: pct > 0 ? 'change-pos' : pct < 0 ? 'change-neg' : '' }, pct !== null ? `${pct > 0 ? '-' : '+'}${Math.abs(pct)}%` : '—'),
+              React.createElement('td', { className: change === null ? '' : change < 0 ? 'change-pos' : change > 0 ? 'change-neg' : 'change-zero' },
+                change === null ? 'First entry' : change < 0 ? `▼ ${Math.abs(change)}` : change > 0 ? `▲ ${change}` : '→ same'
+              )
+            );
+          })
+        )
+      )
+    )
+  );
+}
+
+// LEADERBOARD
+function Leaderboard({ users, logs, currentUser, contest }) {
+  const lb = buildLB(users, logs);
+  const medals = ['🥇', '🥈', '🥉'];
+  const rankCls = ['gold', 'silver', 'bronze'];
+
+  // Build past 14 contest dates
+  const pastDates = [];
+  if (contest.startDate) {
+    for (let i = 0; i < 56; i++) {
+      const d = new Date(contest.startDate);
+      d.setDate(d.getDate() + i);
+      const ds = d.toISOString().slice(0, 10);
+      if (ds <= todayStr()) pastDates.push(ds);
+    }
+  }
+  const show14 = pastDates.slice(-14);
+
+  if (!lb.length) return React.createElement('div', { className: 'card' }, React.createElement('div', { className: 'empty' }, 'No participants have set their starting weight yet.'));
+
+  // Per-person colour palette — vivid, distinct
+  const COLORS = ['#e8ff47','#ff6b35','#60a5fa','#f472b6','#34d399','#a78bfa','#fb923c','#22d3ee'];
+
+  // Build the comparison chart data
+  // X axis = contest days elapsed, Y axis = cumulative % of start weight lost
+  // For each person, build a series of { day, pct } from their logs
+  function buildSeries(u) {
+    const myLogs = logs
+      .filter(l => l.userId === u.id)
+      .sort((a, b) => a.date.localeCompare(b.date));
+    if (!myLogs.length || !u.startWeight || !contest.startDate) return [];
+    return myLogs.map(l => {
+      const day = daysBetween(contest.startDate, l.date) + 1;
+      const pct = pctLost(u.startWeight, l.weight);
+      return { day, pct };
+    }).filter(p => p.day >= 1);
+  }
+
+  function ComparisonChart() {
+    const W = 600, H = 220, PL = 48, PR = 20, PT = 16, PB = 36;
+    const allSeries = lb.map((u, i) => ({ u, color: COLORS[i % COLORS.length], pts: buildSeries(u) })).filter(s => s.pts.length >= 1);
+
+    if (allSeries.length === 0) return React.createElement('div', { className: 'empty', style: { padding: 24 } }, 'Log weight data to see the race chart!');
+
+    const allPcts = allSeries.flatMap(s => s.pts.map(p => p.pct));
+    const allDays = allSeries.flatMap(s => s.pts.map(p => p.day));
+    const maxPct = Math.max(...allPcts, 0.5);
+    const minPct = Math.min(...allPcts, 0);
+    const maxDay = Math.max(...allDays, 7);
+
+    const xs = d => PL + ((d - 1) / Math.max(maxDay - 1, 1)) * (W - PL - PR);
+    const ys = p => PT + ((maxPct - p) / Math.max(maxPct - minPct, 0.1)) * (H - PT - PB);
+
+    // Y axis ticks (0%, and up)
+    const yStep = maxPct <= 2 ? 0.5 : maxPct <= 5 ? 1 : maxPct <= 10 ? 2 : 5;
+    const yTicks = [];
+    for (let v = 0; v <= maxPct + yStep; v += yStep) yTicks.push(+v.toFixed(1));
+
+    // X axis ticks — week markers
+    const xTicks = [1, 8, 15, 22, 29, 36, 43, 50, 56].filter(d => d <= maxDay + 3);
+
+    return React.createElement('div', null,
+      React.createElement('svg', { viewBox: `0 0 ${W} ${H}`, style: { width: '100%', display: 'block' }, preserveAspectRatio: 'none' },
+        // Grid lines
+        yTicks.map((v, i) => React.createElement('g', { key: i },
+          React.createElement('line', { x1: PL, y1: ys(v), x2: W - PR, y2: ys(v), stroke: v === 0 ? '#3a3a3a' : '#222', strokeWidth: v === 0 ? 1.5 : 1 }),
+          React.createElement('text', { x: PL - 6, y: ys(v) + 4, textAnchor: 'end', fill: '#555', fontSize: 10, fontFamily: 'DM Mono' }, `${v}%`)
+        )),
+        // X week ticks
+        xTicks.map((d, i) => React.createElement('g', { key: i },
+          React.createElement('line', { x1: xs(d), y1: PT, x2: xs(d), y2: H - PB, stroke: '#222', strokeWidth: 1, strokeDasharray: '3 3' }),
+          React.createElement('text', { x: xs(d), y: H - PB + 16, textAnchor: 'middle', fill: '#555', fontSize: 9, fontFamily: 'DM Mono' }, `W${Math.ceil(d / 7)}`)
+        )),
+        // Zero line highlighted
+        React.createElement('line', { x1: PL, y1: ys(0), x2: W - PR, y2: ys(0), stroke: '#3a3a3a', strokeWidth: 1.5 }),
+        // Each participant line
+        allSeries.map(({ u, color, pts }) => {
+          if (pts.length < 1) return null;
+          const path = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${xs(p.day).toFixed(1)},${ys(p.pct).toFixed(1)}`).join(' ');
+          const isMe = u.id === currentUser.id;
+          return React.createElement('g', { key: u.id },
+            React.createElement('path', { d: path, fill: 'none', stroke: color, strokeWidth: isMe ? 3 : 2, strokeLinecap: 'round', strokeLinejoin: 'round', opacity: isMe ? 1 : 0.75 }),
+            // End dot with label
+            pts.length > 0 && React.createElement('g', null,
+              React.createElement('circle', { cx: xs(pts[pts.length-1].day), cy: ys(pts[pts.length-1].pct), r: isMe ? 5 : 4, fill: color }),
+            )
+          );
+        })
+      ),
+      // Legend
+      React.createElement('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '8px 16px', marginTop: 12, paddingLeft: PL / 3 } },
+        allSeries.map(({ u, color }) =>
+          React.createElement('div', { key: u.id, style: { display: 'flex', alignItems: 'center', gap: 6 } },
+            React.createElement('div', { style: { width: 20, height: 3, background: color, borderRadius: 2, flexShrink: 0, outline: u.id === currentUser.id ? `2px solid ${color}` : 'none', outlineOffset: 2 } }),
+            React.createElement('span', { style: { fontSize: 12, color: u.id === currentUser.id ? color : '#999', fontWeight: u.id === currentUser.id ? 600 : 400 } }, u.name || u.username)
+          )
+        )
+      )
+    );
+  }
+
+  return React.createElement('div', null,
+    React.createElement('div', { className: 'card' },
+      React.createElement('div', { className: 'card-title' }, '🏆 Leaderboard'),
+      React.createElement('p', { className: 'tip', style: { marginBottom: 16 } }, 'Ranked by % of starting body weight lost — totally fair regardless of how big or small you started.'),
+      lb.map((u, i) => {
+        const cls = rankCls[i] || '';
+        const color = COLORS[i % COLORS.length];
+        return React.createElement('div', { key: u.id, className: `lb-row${cls ? ' ' + cls : ''}`, style: { borderLeft: `3px solid ${color}` } },
+          React.createElement('div', { className: `lb-rank${cls ? ' ' + cls : ''}` }, medals[i] || `#${i + 1}`),
+          React.createElement('div', null,
+            React.createElement('div', { className: 'lb-name' },
+              u.name || u.username,
+              u.id === currentUser.id && React.createElement('span', { style: { fontSize: 11, color: 'var(--accent)', marginLeft: 8 } }, '← you')
+            ),
+            React.createElement('div', { className: 'lb-dots' },
+              show14.map(d => React.createElement('div', { key: d, className: `dot${u.logDates.has(d) ? (d === todayStr() ? ' today' : ' on') : ''}`, title: fmtDate(d) }))
+            )
+          ),
+          React.createElement('div', { className: 'lb-right' },
+            React.createElement('div', { className: 'lb-pct', style: { color } }, u.weightPctLost > 0 ? `-${u.weightPctLost}%` : '0%'),
+            React.createElement('div', { className: 'lb-detail' }, `${u.startWeight}kg → ${u.currentWeight}kg`),
+            React.createElement('div', { className: 'lb-detail' }, `${u.logCount} days logged`)
+          )
+        );
+      })
+    ),
+    React.createElement('div', { className: 'card' },
+      React.createElement('div', { className: 'card-title' }, '📈 The Race'),
+      React.createElement('p', { className: 'tip', style: { marginBottom: 16 } }, 'Cumulative % of body weight lost per person over the contest. Higher = winning.'),
+      React.createElement(ComparisonChart)
+    )
+  );
+}
+
+// WEIGH-IN
+function WeighIn({ user, setUser, contest, logs, refreshAll }) {
+  const [weight, setWeight] = useState('');
+  const [msg, setMsg] = useState(''), [err, setErr] = useState(''), [saving, setSaving] = useState(false);
+  const status = getStatus(contest);
+  const myLogs = logs.filter(l => l.userId === user.id).sort((a, b) => a.date.localeCompare(b.date));
+  const loggedToday = myLogs.find(l => l.date === todayStr());
+
+  async function logWeight() {
+    setErr(''); setMsg('');
+    if (!weight || isNaN(weight) || +weight < 30 || +weight > 300) { setErr('Enter a valid weight in kg.'); return; }
+    if (loggedToday) { setErr('Already logged today! Come back tomorrow.'); return; }
+    setSaving(true);
+    try {
+      const logRow = { id: Date.now().toString(), user_id: user.id, weight: +weight, date: todayStr(), ts: Date.now() };
+      await db.insert('logs', logRow);
+      if (myLogs.length === 0) {
+        await db.update('users', { id: user.id }, { start_weight: +weight });
+        setUser(prev => ({ ...prev, startWeight: +weight }));
+      }
+      await refreshAll();
+      setWeight('');
+      setMsg(`✅ Logged! ${weight}kg`);
+      setTimeout(() => setMsg(''), 4000);
+    } catch(ex) { setErr('Save failed — try again.'); }
+    setSaving(false);
+  }
+
+  return React.createElement('div', null,
+    React.createElement('div', { className: 'card' },
+      React.createElement('div', { className: 'card-title' }, 'Your Starting Weight'),
+      user.startWeight
+        ? React.createElement('div', { className: 'tip' }, `Your starting weight is locked in at ${user.startWeight}kg. All progress is calculated from this baseline.`)
+        : React.createElement('div', { className: 'tip' }, 'Your very first weigh-in will be set as your starting weight. Make sure you log it on Day 1!')
+    ),
+
+    React.createElement('div', { className: 'card' },
+      React.createElement('div', { className: 'card-title' }, `Daily Weigh-In — ${fmtDate(todayStr())}`),
+      loggedToday
+        ? React.createElement('div', { style: { background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.25)', borderRadius: 10, padding: '16px 20px' } },
+            React.createElement('div', { style: { fontSize: 18, fontWeight: 600, color: 'var(--success)', marginBottom: 4 } }, `✅ Today logged: ${loggedToday.weight}kg`),
+            React.createElement('div', { className: 'tip' }, `Come back tomorrow to keep your streak going!`)
+          )
+        : React.createElement('div', null,
+            status !== 'live' && React.createElement('div', { className: 'tip', style: { marginBottom: 12, color: 'var(--accent2)' } },
+              status === 'pending' ? '⏳ Contest hasn\'t started yet — you can still log your weight early!' : '🏁 Contest has ended.'
+            ),
+            React.createElement('div', { className: 'input-row' },
+              React.createElement('div', { className: 'field' },
+                React.createElement('label', null, 'Weight (kg)'),
+                React.createElement('input', { type: 'number', step: '0.1', value: weight, onChange: e => setWeight(e.target.value), placeholder: 'e.g. 84.5' })
+              ),
+              React.createElement('button', { className: 'btn btn-sm', onClick: logWeight, style: { height: 44 }, disabled: saving }, saving ? 'Saving...' : 'Log ⚖️')
+            )
+          ),
+      err && React.createElement('div', { className: 'err', style: { textAlign: 'left', marginTop: 10 } }, err),
+      msg && React.createElement('div', { style: { color: 'var(--success)', fontSize: 13, marginTop: 10 } }, msg)
+    )
+  );
+}
+
+// PHOTOS
+function Photos({ user, contest, photos, refreshAll }) {
+  const [msg, setMsg] = useState(''), [err, setErr] = useState(''), [filter, setFilter] = useState('all'), [uploading, setUploading] = useState(false);
+  const fileRef = useRef();
+  const week = contestWeek(contest.startDate);
+
+  function handleFile(e) {
+    const file = e.target.files[0]; if (!file) return;
+    if (!file.type.startsWith('image/')) { setErr('Image files only.'); return; }
+    if (file.size > 5 * 1024 * 1024) { setErr('Max 5MB per photo.'); return; }
+    const reader = new FileReader();
+    reader.onload = async ev => {
+      setUploading(true);
+      try {
+        await db.insert('photos', { id: Date.now().toString(), user_id: user.id, name: user.name || user.username, week: week || 1, data_url: ev.target.result, date: todayStr(), ts: Date.now() });
+        await refreshAll();
+        setMsg('📸 Uploaded!'); setErr(''); setTimeout(() => setMsg(''), 3000);
+      } catch { setErr('Upload failed — try again.'); }
+      setUploading(false);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  }
+
+  const filtered = (filter === 'all' ? photos : photos.filter(p => p.userId === user.id)).sort((a, b) => b.ts - a.ts);
+
+  async function deletePhoto(id) {
+    if (!confirm('Delete this photo?')) return;
+    try {
+      await db.delete('photos', { id });
+      await refreshAll();
+    } catch { alert('Delete failed — try again.'); }
+  }
+
+  return React.createElement('div', null,
+    React.createElement('div', { className: 'card' },
+      React.createElement('div', { className: 'card-title' }, 'Upload Progress Photo'),
+      week && React.createElement('div', { className: 'tip', style: { marginBottom: 12 } }, `Week ${week} photo — tagged automatically.`),
+      React.createElement('div', { className: 'upload-zone', onClick: () => !uploading && fileRef.current.click() },
+        React.createElement('input', { type: 'file', ref: fileRef, accept: 'image/*', onChange: handleFile }),
+        React.createElement('div', { style: { fontSize: 36, marginBottom: 8 } }, uploading ? '⏳' : '📷'),
+        React.createElement('div', { className: 'tip' }, uploading ? 'Uploading...' : 'Click to upload (max 5MB)')
+      ),
+      err && React.createElement('div', { className: 'err', style: { textAlign: 'left', marginTop: 8 } }, err),
+      msg && React.createElement('div', { style: { color: 'var(--success)', fontSize: 13, marginTop: 8 } }, msg)
+    ),
+    React.createElement('div', { className: 'card' },
+      React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 } },
+        React.createElement('div', { className: 'card-title', style: { margin: 0 } }, 'Photo Gallery'),
+        React.createElement('div', { style: { display: 'flex', gap: 8 } },
+          ['all', 'mine'].map(f => React.createElement('button', { key: f, className: 'btn btn-sm btn-outline', onClick: () => setFilter(f), style: { opacity: filter === f ? 1 : 0.5 } }, f === 'all' ? 'Everyone' : 'Mine'))
+        )
+      ),
+      filtered.length === 0
+        ? React.createElement('div', { className: 'empty' }, 'No photos uploaded yet.')
+        : React.createElement('div', { className: 'photo-grid' },
+            filtered.map(p => React.createElement('div', { key: p.id, className: 'photo-card' },
+              React.createElement('img', { className: 'photo-img', src: p.dataUrl, alt: '' }),
+              React.createElement('div', { className: 'photo-meta' },
+                React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+                  React.createElement('div', { className: 'photo-meta-name' }, p.name),
+                  p.userId === user.id && React.createElement('button', {
+                    onClick: () => deletePhoto(p.id),
+                    title: 'Delete photo',
+                    style: { background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 14, padding: '0 2px', lineHeight: 1, transition: 'color 0.2s' },
+                    onMouseEnter: e => e.target.style.color = 'var(--danger)',
+                    onMouseLeave: e => e.target.style.color = 'var(--muted)'
+                  }, '🗑')
+                ),
+                React.createElement('div', { style: { display: 'flex', gap: 6, marginTop: 5 } },
+                  React.createElement('span', { className: 'tag tag-week' }, `Wk ${p.week}`),
+                  React.createElement('span', { className: 'tag tag-day' }, fmtDate(p.date))
+                )
+              )
+            ))
+          )
+    )
+  );
+}
+
+// ADMIN
+function Admin({ contest, users, logs, photos, refreshAll }) {
+  const [startDate, setStartDate] = useState(contest.startDate || '');
+  const [newName, setNewName] = useState(''), [newUser, setNewUser] = useState(''), [newPass, setNewPass] = useState('');
+  const [msg, setMsg] = useState(''), [err, setErr] = useState(''), [saving, setSaving] = useState('');
+
+  async function saveContest() {
+    if (!startDate) { setErr('Pick a start date.'); return; }
+    setSaving('contest');
+    try {
+      await db.update('contest', { id: 1 }, { start_date: startDate });
+      await refreshAll();
+      setMsg('✅ Start date saved!'); setErr(''); setTimeout(() => setMsg(''), 2500);
+    } catch { setErr('Save failed.'); }
+    setSaving('');
+  }
+
+  async function addUser() {
+    if (!newName || !newUser || !newPass) { setErr('Fill all fields.'); return; }
+    if (users.find(u => u.username === newUser)) { setErr('Username taken.'); return; }
+    setSaving('user');
+    try {
+      await db.insert('users', { id: Date.now().toString(), username: newUser, password: newPass, role: 'user', name: newName });
+      await refreshAll();
+      setNewName(''); setNewUser(''); setNewPass('');
+      setMsg('✅ Participant added!'); setErr(''); setTimeout(() => setMsg(''), 2500);
+    } catch { setErr('Add failed — username may already exist.'); }
+    setSaving('');
+  }
+
+  async function removeUser(id) {
+    if (!confirm('Remove this participant and all their data?')) return;
+    try {
+      await db.delete('users', { id }); // cascade deletes logs + photos
+      await refreshAll();
+    } catch { alert('Remove failed.'); }
+  }
+
+  async function resetLogs(id) {
+    if (!confirm('Reset all weigh-in logs for this user?')) return;
+    try {
+      await db.delete('logs', { user_id: id });
+      await db.update('users', { id }, { start_weight: null });
+      await refreshAll();
+    } catch { alert('Reset failed.'); }
+  }
+
+  const participants = users.filter(u => u.role !== 'admin');
+  const status = getStatus(contest);
+
+  return React.createElement('div', null,
+    React.createElement('div', { className: 'card' },
+      React.createElement('div', { className: 'card-title' }, '⚙️ Contest Settings'),
+      React.createElement('div', { style: { marginBottom: 12, fontSize: 13 } }, 'Status: ',
+        status === 'live' && React.createElement('span', { className: 'contest-status live' }, React.createElement('span', { className: 'pulse' }), ' Live'),
+        status === 'pending' && React.createElement('span', { className: 'contest-status pending' }, '⏳ Pending'),
+        status === 'ended' && React.createElement('span', { className: 'contest-status ended' }, '🏁 Ended')
+      ),
+      React.createElement('div', { className: 'input-row' },
+        React.createElement('div', { className: 'field' },
+          React.createElement('label', null, 'Contest Start Date'),
+          React.createElement('input', { type: 'date', value: startDate, onChange: e => setStartDate(e.target.value) })
+        ),
+        React.createElement('button', { className: 'btn btn-sm', onClick: saveContest, style: { height: 44 }, disabled: saving === 'contest' }, saving === 'contest' ? 'Saving...' : 'Save')
+      ),
+      msg && React.createElement('div', { style: { color: 'var(--success)', fontSize: 13, marginTop: 8 } }, msg),
+      err && React.createElement('div', { className: 'err', style: { textAlign: 'left', marginTop: 8 } }, err)
+    ),
+
+    React.createElement('div', { className: 'card' },
+      React.createElement('div', { className: 'card-title' }, '➕ Add Participant'),
+      React.createElement('div', { className: 'input-row', style: { flexWrap: 'wrap' } },
+        React.createElement('div', { className: 'field' }, React.createElement('label', null, 'Full Name'), React.createElement('input', { value: newName, onChange: e => setNewName(e.target.value), placeholder: 'John Smith' })),
+        React.createElement('div', { className: 'field' }, React.createElement('label', null, 'Username'), React.createElement('input', { value: newUser, onChange: e => setNewUser(e.target.value), placeholder: 'johnsmith' })),
+        React.createElement('div', { className: 'field' }, React.createElement('label', null, 'Password'), React.createElement('input', { value: newPass, onChange: e => setNewPass(e.target.value), placeholder: 'password' })),
+        React.createElement('button', { className: 'btn btn-sm', onClick: addUser, style: { height: 44 }, disabled: saving === 'user' }, saving === 'user' ? 'Adding...' : 'Add')
+      )
+    ),
+
+    React.createElement('div', { className: 'card' },
+      React.createElement('div', { className: 'card-title' }, `👥 Participants (${participants.length})`),
+      participants.length === 0
+        ? React.createElement('div', { className: 'empty' }, 'No participants yet.')
+        : participants.map(u => {
+          const uLogs = logs.filter(l => l.userId === u.id).sort((a, b) => a.date.localeCompare(b.date));
+          const last = uLogs[uLogs.length - 1];
+          return React.createElement('div', { key: u.id, className: 'user-row' },
+            React.createElement('div', { className: 'user-row-name' }, u.name, React.createElement('br'),
+              React.createElement('span', { style: { fontSize: 12, color: 'var(--muted)', fontWeight: 400 } }, '@', u.username)
+            ),
+            React.createElement('div', { className: 'user-row-info' },
+              u.startWeight ? `Start: ${u.startWeight}kg` : 'No start weight',
+              last ? ` → ${last.weight}kg (${pctLost(u.startWeight, last.weight)}% lost)` : ''
+            ),
+            React.createElement('div', { style: { fontSize: 12, color: 'var(--muted)' } }, `${uLogs.length} days`),
+            React.createElement('button', { className: 'btn btn-sm btn-outline', onClick: () => resetLogs(u.id), style: { fontSize: 12 } }, 'Reset'),
+            React.createElement('button', { className: 'btn btn-sm btn-danger', onClick: () => removeUser(u.id), style: { fontSize: 12 } }, 'Remove')
+          );
+        })
+    )
+  );
+}
+
+// MAIN APP
+function App() {
+  const [user, setUser] = useState(null);
+  const [tab, setTab] = useState('Dashboard');
+  const [users, setUsers] = useState([]);
+  const [contest, setContest] = useState({ startDate: null });
+  const [logs, setLogs] = useState([]);
+  const [photos, setPhotos] = useState([]);
+  const [appLoading, setAppLoading] = useState(false);
+
+  async function refreshAll() {
+    const data = await loadAll();
+    setUsers(data.users);
+    setContest(data.contest);
+    setLogs(data.logs);
+    setPhotos(data.photos);
+    return data;
+  }
+
+  async function handleLogin(u) {
+    setUser(u);
+    setAppLoading(true);
+    await refreshAll();
+    setAppLoading(false);
+  }
+
+  if (!user) return React.createElement(AuthScreen, { onLogin: handleLogin });
+
+  if (appLoading) return React.createElement('div', { style: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' } },
+    React.createElement('div', { style: { fontFamily: "'Bebas Neue'", fontSize: 28, color: 'var(--accent)', letterSpacing: 2 } }, 'Loading...')
+  );
+
+  const isAdmin = user.role === 'admin';
+  const currentUser = { ...user, ...(users.find(u2 => u2.id === user.id) || {}) };
+
+  return React.createElement('div', { className: 'app' },
+    React.createElement(TopBar, { user: currentUser, onLogout: () => { setUser(null); setTab('Dashboard'); }, tab, setTab, isAdmin }),
+    React.createElement('div', { className: 'content' },
+      tab === 'Dashboard'   && React.createElement(Dashboard,   { user: currentUser, contest, logs, users, isAdmin }),
+      tab === 'My Stats'    && React.createElement(MyStats,     { user: currentUser, logs, contest }),
+      tab === 'Leaderboard' && React.createElement(Leaderboard, { users, logs, currentUser, contest }),
+      tab === 'Weigh-In'    && React.createElement(WeighIn,     { user: currentUser, setUser: fn => setUser(typeof fn === 'function' ? fn(user) : fn), contest, logs, refreshAll }),
+      tab === 'Photos'      && React.createElement(Photos,      { user: currentUser, contest, photos, refreshAll }),
+      tab === 'Admin'       && isAdmin && React.createElement(Admin, { contest, users, logs, photos, refreshAll })
+    )
+  );
+}
+
+ReactDOM.render(React.createElement(App), document.getElementById('root'));
+</script>
+</body>
+</html>
