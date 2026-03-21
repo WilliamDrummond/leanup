@@ -118,9 +118,20 @@
   .progress-bar { height: 100%; background: var(--accent); border-radius: 4px; }
   .today-badge { background: rgba(232,255,71,0.12); color: var(--accent); font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600; margin-left: 6px; }
 
+  .badges-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+  .badge { display: flex; align-items: center; gap: 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; min-width: 180px; flex: 1; transition: border-color 0.2s; }
+  .badge.earned { border-color: rgba(232,255,71,0.3); background: rgba(232,255,71,0.04); }
+  .badge.locked { opacity: 0.38; filter: grayscale(1); }
+  .badge-icon { font-size: 26px; line-height: 1; flex-shrink: 0; }
+  .badge-info { flex: 1; min-width: 0; }
+  .badge-name { font-weight: 600; font-size: 13px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .badge-desc { font-size: 11px; color: var(--muted); line-height: 1.3; }
+  .badge-check { font-size: 14px; flex-shrink: 0; }
+
   @media (max-width: 600px) {
     .content { padding: 14px; } .auth-card { padding: 32px 20px; }
     .card { padding: 16px; } .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .badge { min-width: 140px; }
   }
 </style>
 </head>
@@ -254,6 +265,55 @@ function calcStats(user, myLogs, contest) {
   const trend = recent7.length >= 2 ? +(recent7[0].weight - recent7[recent7.length - 1].weight).toFixed(2) : 0;
 
   return { first, last, sorted, totalLost, weightPctLost, avgPerDay, pacePerWeek, bestDrop, worstGain, streak, daysLeft, projectedFinal, projectedLoss, trend };
+}
+
+const BADGES = [
+  // Logging consistency
+  { id: 'first_log',   icon: '📋', name: 'First Log',      desc: 'Log your very first weigh-in',        check: (st, n) => n >= 1 },
+  { id: 'week_streak', icon: '🔥', name: 'Week Warrior',   desc: '7-day logging streak',                check: (st) => st && st.streak >= 7 },
+  { id: 'fortnight',   icon: '⚡', name: 'Fortnight Fire', desc: '14-day logging streak',               check: (st) => st && st.streak >= 14 },
+  { id: 'iron_will',   icon: '🧱', name: 'Iron Will',      desc: '30-day logging streak',               check: (st) => st && st.streak >= 30 },
+  { id: 'ten_logs',    icon: '📅', name: '10 Days In',     desc: 'Logged weight on 10 separate days',   check: (st, n) => n >= 10 },
+  { id: 'month_logs',  icon: '🗓️', name: 'Monthly',        desc: 'Logged weight on 28+ days',           check: (st, n) => n >= 28 },
+  // Weight loss – kg
+  { id: 'drop_1kg',    icon: '💧', name: '1kg Down',       desc: 'Lost your first kilogram',            check: (st) => st && st.totalLost >= 1 },
+  { id: 'drop_2_5kg',  icon: '💪', name: '2.5kg Club',     desc: 'Lost 2.5kg from your starting weight', check: (st) => st && st.totalLost >= 2.5 },
+  { id: 'drop_5kg',    icon: '🏅', name: '5kg Milestone',  desc: 'Lost 5kg — serious progress!',        check: (st) => st && st.totalLost >= 5 },
+  { id: 'drop_10kg',   icon: '👑', name: '10kg Legend',    desc: 'Lost 10kg — absolutely elite!',       check: (st) => st && st.totalLost >= 10 },
+  // Weight loss – percentage
+  { id: 'pct_1',       icon: '🎯', name: '1% Drop',        desc: 'Lost 1% of your starting weight',     check: (st) => st && st.weightPctLost >= 1 },
+  { id: 'pct_3',       icon: '⭐', name: '3% Drop',        desc: 'Lost 3% of your starting weight',     check: (st) => st && st.weightPctLost >= 3 },
+  { id: 'pct_5',       icon: '🌟', name: '5% Drop',        desc: 'Lost 5% of your starting weight',     check: (st) => st && st.weightPctLost >= 5 },
+  { id: 'pct_10',      icon: '💎', name: '10% Champion',   desc: 'Lost 10% of your starting weight',    check: (st) => st && st.weightPctLost >= 10 },
+];
+
+function calcBadges(st, logCount) {
+  return BADGES.map(b => ({ ...b, earned: !!b.check(st, logCount) }));
+}
+
+function MilestoneBadges({ st, logCount }) {
+  const badges = calcBadges(st, logCount);
+  const earned = badges.filter(b => b.earned);
+  const locked = badges.filter(b => !b.earned);
+  return React.createElement('div', { className: 'card' },
+    React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 } },
+      React.createElement('div', { className: 'card-title', style: { margin: 0 } }, 'Milestone Badges'),
+      React.createElement('span', { style: { background: 'rgba(232,255,71,0.12)', color: 'var(--accent)', fontSize: 12, fontWeight: 600, padding: '3px 10px', borderRadius: 20 } }, `${earned.length} / ${badges.length}`)
+    ),
+    earned.length === 0 && React.createElement('div', { className: 'tip', style: { marginBottom: 14 } }, 'Start logging to unlock your first badge!'),
+    React.createElement('div', { className: 'badges-grid' },
+      [...earned, ...locked].map(b =>
+        React.createElement('div', { key: b.id, className: `badge ${b.earned ? 'earned' : 'locked'}` },
+          React.createElement('div', { className: 'badge-icon' }, b.icon),
+          React.createElement('div', { className: 'badge-info' },
+            React.createElement('div', { className: 'badge-name' }, b.name),
+            React.createElement('div', { className: 'badge-desc' }, b.desc)
+          ),
+          b.earned && React.createElement('div', { className: 'badge-check' }, '✓')
+        )
+      )
+    )
+  );
 }
 
 function buildLB(users, logs) {
@@ -508,6 +568,8 @@ function MyStats({ user, logs, contest, refreshAll }) {
         React.createElement('div', { className: 'stat-sub' }, `out of ${getStatus(contest) === 'live' ? contestDay(contest.startDate) : 56} possible days`)
       )
     ),
+
+    React.createElement(MilestoneBadges, { st, logCount: myLogs.length }),
 
     React.createElement('div', { className: 'card' },
       React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 } },
