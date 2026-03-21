@@ -1227,13 +1227,21 @@ function Settings({ user, setUser }) {
 
 // MAIN APP
 function App() {
-  const [user, setUser] = useState(null);
+  const [user, setUserRaw] = useState(() => {
+    try { const s = localStorage.getItem('leanup_user'); return s ? JSON.parse(s) : null; } catch { return null; }
+  });
   const [tab, setTab] = useState('Dashboard');
   const [users, setUsers] = useState([]);
   const [contest, setContest] = useState({ startDate: null });
   const [logs, setLogs] = useState([]);
   const [photos, setPhotos] = useState([]);
-  const [appLoading, setAppLoading] = useState(false);
+  const [appLoading, setAppLoading] = useState(!!user);
+
+  function setUser(u) {
+    if (u) localStorage.setItem('leanup_user', JSON.stringify(u));
+    else localStorage.removeItem('leanup_user');
+    setUserRaw(u);
+  }
 
   async function refreshAll() {
     const data = await loadAll();
@@ -1243,6 +1251,10 @@ function App() {
     setPhotos(data.photos);
     return data;
   }
+
+  useEffect(() => {
+    if (user) { setAppLoading(true); refreshAll().then(() => setAppLoading(false)); }
+  }, []);
 
   async function handleLogin(u) {
     setUser(u);
@@ -1266,10 +1278,10 @@ function App() {
       tab === 'Dashboard'   && React.createElement(Dashboard,   { user: currentUser, contest, logs, users, isAdmin }),
       tab === 'My Stats'    && React.createElement(MyStats,     { user: currentUser, logs, contest, refreshAll }),
       tab === 'Leaderboard' && React.createElement(Leaderboard, { users, logs, currentUser, contest }),
-      tab === 'Weigh-In'    && React.createElement(WeighIn,     { user: currentUser, setUser: fn => setUser(typeof fn === 'function' ? fn(user) : fn), contest, logs, refreshAll }),
+      tab === 'Weigh-In'    && React.createElement(WeighIn,     { user: currentUser, setUser: fn => { const next = typeof fn === 'function' ? fn(user) : fn; setUser(next); }, contest, logs, refreshAll }),
       tab === 'Photos'      && React.createElement(Photos,      { user: currentUser, contest, photos, refreshAll }),
       tab === 'Admin'       && isAdmin && React.createElement(Admin, { contest, users, logs, photos, refreshAll }),
-      tab === 'Settings'    && React.createElement(Settings, { user: currentUser, setUser: fn => setUser(typeof fn === 'function' ? fn(user) : fn) })
+      tab === 'Settings'    && React.createElement(Settings, { user: currentUser, setUser: fn => { const next = typeof fn === 'function' ? fn(user) : fn; setUser(next); } })
     )
   );
 }
