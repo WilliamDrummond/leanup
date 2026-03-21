@@ -906,6 +906,98 @@ function Photos({ user, contest, photos, refreshAll }) {
   );
 }
 
+// PAYOUT CALCULATOR
+const SPLIT_PRESETS = {
+  'Winner Takes All': [100],
+  'Top 2 (70/30)': [70, 30],
+  'Top 3 (60/25/15)': [60, 25, 15],
+  'Top 3 (50/30/20)': [50, 30, 20],
+  'Top 4 (50/25/15/10)': [50, 25, 15, 10],
+  'Custom': null,
+};
+
+function PayoutCalculator({ users, logs }) {
+  const [pool, setPool] = useState('');
+  const [preset, setPreset] = useState('Top 3 (60/25/15)');
+  const [custom, setCustom] = useState(['60', '25', '15']);
+
+  const lb = buildLB(users, logs);
+  const splits = preset === 'Custom' ? custom.map(v => +v || 0) : SPLIT_PRESETS[preset];
+  const totalSplit = splits.reduce((a, b) => a + b, 0);
+  const poolNum = parseFloat(pool) || 0;
+
+  const rows = lb.map((u, i) => {
+    const splitPct = splits[i] || 0;
+    const payout = poolNum > 0 && totalSplit > 0 ? (poolNum * splitPct / 100) : null;
+    return { ...u, splitPct, payout };
+  });
+
+  function addCustomSlot() { setCustom(prev => [...prev, '']); }
+  function removeCustomSlot(i) { setCustom(prev => prev.filter((_, idx) => idx !== i)); }
+  function setCustomSlot(i, val) { setCustom(prev => prev.map((v, idx) => idx === i ? val : v)); }
+
+  const medals = ['🥇', '🥈', '🥉'];
+
+  return React.createElement('div', { className: 'card' },
+    React.createElement('div', { className: 'card-title' }, '💰 Payout Calculator'),
+    React.createElement('div', { className: 'input-row', style: { marginBottom: 16 } },
+      React.createElement('div', { className: 'field' },
+        React.createElement('label', null, 'Prize Pool ($)'),
+        React.createElement('input', { type: 'number', min: '0', step: '1', value: pool, onChange: e => setPool(e.target.value), placeholder: '500' })
+      ),
+      React.createElement('div', { className: 'field' },
+        React.createElement('label', null, 'Split Preset'),
+        React.createElement('select', { value: preset, onChange: e => setPreset(e.target.value) },
+          Object.keys(SPLIT_PRESETS).map(k => React.createElement('option', { key: k, value: k }, k))
+        )
+      )
+    ),
+    preset === 'Custom' && React.createElement('div', { style: { marginBottom: 16 } },
+      React.createElement('div', { style: { fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--muted)', marginBottom: 8 } }, 'Split % per rank (must total 100)'),
+      React.createElement('div', { style: { display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' } },
+        custom.map((v, i) => React.createElement('div', { key: i, style: { display: 'flex', alignItems: 'center', gap: 4 } },
+          React.createElement('span', { style: { fontSize: 12, color: 'var(--muted)' } }, `#${i + 1}`),
+          React.createElement('input', { type: 'number', min: '0', max: '100', value: v, onChange: e => setCustomSlot(i, e.target.value),
+            style: { width: 64, background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 8px', color: 'var(--text)', fontFamily: 'DM Mono', fontSize: 13 } }),
+          React.createElement('span', { style: { fontSize: 12, color: 'var(--muted)' } }, '%'),
+          custom.length > 1 && React.createElement('button', { onClick: () => removeCustomSlot(i),
+            style: { background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: 16, lineHeight: 1 } }, '×')
+        )),
+        React.createElement('button', { className: 'btn btn-sm btn-outline', onClick: addCustomSlot, style: { fontSize: 12 } }, '+ Add Rank')
+      ),
+      totalSplit !== 100 && React.createElement('div', { style: { fontSize: 12, color: 'var(--danger)', marginTop: 8 } }, `Split totals ${totalSplit}% — must equal 100%`)
+    ),
+    lb.length === 0
+      ? React.createElement('div', { className: 'empty' }, 'No participants with starting weights yet.')
+      : React.createElement('table', { className: 'log-table', style: { marginTop: 4 } },
+          React.createElement('thead', null,
+            React.createElement('tr', null,
+              React.createElement('th', null, 'Rank'),
+              React.createElement('th', null, 'Participant'),
+              React.createElement('th', null, '% Lost'),
+              React.createElement('th', null, 'Split'),
+              React.createElement('th', null, 'Payout')
+            )
+          ),
+          React.createElement('tbody', null,
+            rows.map((u, i) =>
+              React.createElement('tr', { key: u.id },
+                React.createElement('td', { style: { fontSize: 18 } }, medals[i] || `#${i + 1}`),
+                React.createElement('td', { style: { fontFamily: 'DM Sans', fontWeight: 600 } }, u.name || u.username),
+                React.createElement('td', { style: { color: 'var(--success)' } }, `${u.weightPctLost}%`),
+                React.createElement('td', { style: { color: u.splitPct ? 'var(--accent)' : 'var(--muted)' } },
+                  u.splitPct ? `${u.splitPct}%` : '—'
+                ),
+                React.createElement('td', { style: { color: u.payout ? 'var(--success)' : 'var(--muted)', fontWeight: u.payout ? 600 : 400 } },
+                  u.payout != null ? `$${u.payout.toFixed(2)}` : poolNum > 0 ? '$0.00' : '—'
+                )
+              )
+            )
+          )
+        )
+  );
+}
+
 // ADMIN
 function Admin({ contest, users, logs, photos, refreshAll }) {
   const [startDate, setStartDate] = useState(contest.startDate || '');
@@ -1045,7 +1137,9 @@ function Admin({ contest, users, logs, photos, refreshAll }) {
             React.createElement('button', { className: 'btn btn-sm btn-danger', onClick: () => removeUser(u.id), style: { fontSize: 12 } }, 'Remove')
           );
         })
-    )
+    ),
+
+    React.createElement(PayoutCalculator, { users, logs })
   );
 }
 
