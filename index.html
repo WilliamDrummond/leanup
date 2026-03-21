@@ -1318,7 +1318,7 @@ function CountdownScreen({ contest }) {
   }, []);
 
   const hasDate = !!contest.startDate;
-  const start = hasDate ? new Date(contest.startDate) : null;
+  const start = hasDate ? new Date(contest.startDate + 'T00:00:00') : null;
   const diff = start ? Math.max(0, start - now) : null;
   const days    = diff !== null ? Math.floor(diff / 86400000) : '--';
   const hours   = diff !== null ? Math.floor((diff % 86400000) / 3600000) : '--';
