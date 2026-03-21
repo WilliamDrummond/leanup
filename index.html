@@ -18,6 +18,16 @@
   .welcome-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
   .welcome-modal { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 40px 36px; width: 100%; max-width: 440px; text-align: center; }
   .welcome-trophy { font-size: 52px; margin-bottom: 16px; }
+  .countdown-screen { min-height: calc(100vh - 100px); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; text-align: center; }
+  .countdown-icon { font-size: 56px; margin-bottom: 20px; }
+  .countdown-title { font-family: 'Bebas Neue'; font-size: clamp(36px, 8vw, 64px); letter-spacing: 3px; color: var(--accent); margin-bottom: 8px; }
+  .countdown-sub { color: var(--muted); font-size: 15px; margin-bottom: 40px; }
+  .countdown-tiles { display: flex; gap: 16px; margin-bottom: 40px; flex-wrap: wrap; justify-content: center; }
+  .countdown-tile { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px 28px; min-width: 90px; }
+  .countdown-tile-num { font-family: 'Bebas Neue'; font-size: 52px; color: var(--accent); line-height: 1; }
+  .countdown-tile-label { font-size: 11px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+  .countdown-date { background: var(--surface2); border-radius: 10px; padding: 12px 24px; font-size: 14px; color: var(--muted); margin-bottom: 16px; }
+  .countdown-date strong { color: var(--text); }
   .welcome-title { font-family: 'Bebas Neue'; font-size: 32px; letter-spacing: 2px; color: var(--accent); margin-bottom: 8px; }
   .welcome-sub { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
   .welcome-steps { background: var(--surface2); border-radius: 12px; padding: 20px; margin-bottom: 24px; text-align: left; display: flex; flex-direction: column; gap: 14px; }
@@ -1300,6 +1310,47 @@ function Settings({ user, setUser }) {
 }
 
 // MAIN APP
+function CountdownScreen({ contest }) {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const hasDate = !!contest.startDate;
+  const start = hasDate ? new Date(contest.startDate) : null;
+  const diff = start ? Math.max(0, start - now) : null;
+  const days    = diff !== null ? Math.floor(diff / 86400000) : '--';
+  const hours   = diff !== null ? Math.floor((diff % 86400000) / 3600000) : '--';
+  const minutes = diff !== null ? Math.floor((diff % 3600000) / 60000) : '--';
+  const seconds = diff !== null ? Math.floor((diff % 60000) / 1000) : '--';
+
+  const fmt = d => d !== '--' ? String(d).padStart(2, '0') : '--';
+  const startLabel = start ? start.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) : null;
+
+  return React.createElement('div', { className: 'countdown-screen' },
+    React.createElement('div', { className: 'countdown-icon' }, '⏳'),
+    React.createElement('div', { className: 'countdown-title' }, 'Contest Starts Soon'),
+    React.createElement('div', { className: 'countdown-sub' },
+      hasDate ? 'The competition kicks off in:' : 'The admin hasn\'t set a start date yet. Check back soon!'
+    ),
+    hasDate && React.createElement(React.Fragment, null,
+      React.createElement('div', { className: 'countdown-tiles' },
+        [['days', days], ['hours', fmt(hours)], ['mins', fmt(minutes)], ['secs', fmt(seconds)]].map(([label, val]) =>
+          React.createElement('div', { className: 'countdown-tile', key: label },
+            React.createElement('div', { className: 'countdown-tile-num' }, val),
+            React.createElement('div', { className: 'countdown-tile-label' }, label)
+          )
+        )
+      ),
+      React.createElement('div', { className: 'countdown-date' },
+        'Starts on ', React.createElement('strong', null, startLabel)
+      )
+    ),
+    React.createElement('div', { style: { color: 'var(--muted)', fontSize: 13 } }, 'Come back on start day to log your first weigh-in!')
+  );
+}
+
 function WelcomeModal({ onDismiss, onGoWeighIn }) {
   return React.createElement('div', { className: 'welcome-overlay' },
     React.createElement('div', { className: 'welcome-modal' },
@@ -1400,13 +1451,17 @@ function App() {
     }),
     React.createElement(TopBar, { user: currentUser, onLogout: () => { setUser(null); setTab('Dashboard'); }, tab, setTab, isAdmin }),
     React.createElement('div', { className: 'content' },
-      tab === 'Dashboard'   && React.createElement(Dashboard,   { user: currentUser, contest, logs, users, isAdmin }),
-      tab === 'My Stats'    && React.createElement(MyStats,     { user: currentUser, logs, contest, refreshAll }),
-      tab === 'Leaderboard' && React.createElement(Leaderboard, { users, logs, currentUser, contest }),
-      tab === 'Weigh-In'    && React.createElement(WeighIn,     { user: currentUser, setUser: fn => { const next = typeof fn === 'function' ? fn(user) : fn; setUser(next); }, contest, logs, refreshAll }),
-      tab === 'Photos'      && React.createElement(Photos,      { user: currentUser, contest, photos, refreshAll }),
-      tab === 'Admin'       && isAdmin && React.createElement(Admin, { contest, users, logs, photos, refreshAll }),
-      tab === 'Settings'    && React.createElement(Settings, { user: currentUser, setUser: fn => { const next = typeof fn === 'function' ? fn(user) : fn; setUser(next); } })
+      !isAdmin && getStatus(contest) === 'pending'
+        ? React.createElement(CountdownScreen, { contest })
+        : React.createElement(React.Fragment, null,
+            tab === 'Dashboard'   && React.createElement(Dashboard,   { user: currentUser, contest, logs, users, isAdmin }),
+            tab === 'My Stats'    && React.createElement(MyStats,     { user: currentUser, logs, contest, refreshAll }),
+            tab === 'Leaderboard' && React.createElement(Leaderboard, { users, logs, currentUser, contest }),
+            tab === 'Weigh-In'    && React.createElement(WeighIn,     { user: currentUser, setUser: fn => { const next = typeof fn === 'function' ? fn(user) : fn; setUser(next); }, contest, logs, refreshAll }),
+            tab === 'Photos'      && React.createElement(Photos,      { user: currentUser, contest, photos, refreshAll }),
+            tab === 'Admin'       && isAdmin && React.createElement(Admin, { contest, users, logs, photos, refreshAll }),
+            tab === 'Settings'    && React.createElement(Settings, { user: currentUser, setUser: fn => { const next = typeof fn === 'function' ? fn(user) : fn; setUser(next); } })
+          )
     )
   );
 }
