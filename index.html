@@ -15,6 +15,18 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
 
+  .welcome-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .welcome-modal { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 40px 36px; width: 100%; max-width: 440px; text-align: center; }
+  .welcome-trophy { font-size: 52px; margin-bottom: 16px; }
+  .welcome-title { font-family: 'Bebas Neue'; font-size: 32px; letter-spacing: 2px; color: var(--accent); margin-bottom: 8px; }
+  .welcome-sub { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+  .welcome-steps { background: var(--surface2); border-radius: 12px; padding: 20px; margin-bottom: 24px; text-align: left; display: flex; flex-direction: column; gap: 14px; }
+  .welcome-step { display: flex; gap: 12px; align-items: flex-start; }
+  .welcome-step-num { background: var(--accent); color: #000; font-weight: 700; font-size: 12px; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .welcome-step-text { font-size: 14px; line-height: 1.5; }
+  .welcome-step-text strong { color: var(--text); }
+  .welcome-step-text span { color: var(--muted); font-size: 13px; }
+
   .auth-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; background: var(--bg); position: relative; overflow: hidden; }
   .auth-bg { font-family: 'Bebas Neue'; font-size: clamp(100px,22vw,260px); color: rgba(232,255,71,0.03); position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); pointer-events: none; line-height: 0.9; text-align: center; white-space: pre; }
   .auth-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 48px 40px; width: 100%; max-width: 420px; position: relative; z-index: 1; }
@@ -1288,6 +1300,44 @@ function Settings({ user, setUser }) {
 }
 
 // MAIN APP
+function WelcomeModal({ onDismiss, onGoWeighIn }) {
+  return React.createElement('div', { className: 'welcome-overlay' },
+    React.createElement('div', { className: 'welcome-modal' },
+      React.createElement('div', { className: 'welcome-trophy' }, '🏆'),
+      React.createElement('div', { className: 'welcome-title' }, 'Welcome to LeanUp!'),
+      React.createElement('div', { className: 'welcome-sub' }, '8 weeks. One winner. Ranked by % of body weight lost.'),
+      React.createElement('div', { className: 'welcome-steps' },
+        React.createElement('div', { className: 'welcome-step' },
+          React.createElement('div', { className: 'welcome-step-num' }, '1'),
+          React.createElement('div', { className: 'welcome-step-text' },
+            React.createElement('strong', null, 'Log your starting weight'),
+            React.createElement('br'),
+            React.createElement('span', null, 'This locks in your baseline — do it today!')
+          )
+        ),
+        React.createElement('div', { className: 'welcome-step' },
+          React.createElement('div', { className: 'welcome-step-num' }, '2'),
+          React.createElement('div', { className: 'welcome-step-text' },
+            React.createElement('strong', null, 'Weigh in every day'),
+            React.createElement('br'),
+            React.createElement('span', null, 'Build your streak and track your progress')
+          )
+        ),
+        React.createElement('div', { className: 'welcome-step' },
+          React.createElement('div', { className: 'welcome-step-num' }, '3'),
+          React.createElement('div', { className: 'welcome-step-text' },
+            React.createElement('strong', null, 'Climb the leaderboard'),
+            React.createElement('br'),
+            React.createElement('span', null, 'The person who loses the highest % wins')
+          )
+        )
+      ),
+      React.createElement('button', { className: 'btn', style: { width: '100%', marginBottom: 10 }, onClick: onGoWeighIn }, 'Log My First Weight →'),
+      React.createElement('button', { style: { background: 'none', border: 'none', color: 'var(--muted)', fontSize: 13, cursor: 'pointer', width: '100%' }, onClick: onDismiss }, "I'll do it later")
+    )
+  );
+}
+
 function App() {
   const [user, setUserRaw] = useState(() => {
     try { const s = localStorage.getItem('leanup_user'); return s ? JSON.parse(s) : null; } catch { return null; }
@@ -1298,6 +1348,7 @@ function App() {
   const [logs, setLogs] = useState([]);
   const [photos, setPhotos] = useState([]);
   const [appLoading, setAppLoading] = useState(!!user);
+  const [showWelcome, setShowWelcome] = useState(false);
 
   function setUser(u) {
     if (u) localStorage.setItem('leanup_user', JSON.stringify(u));
@@ -1321,8 +1372,11 @@ function App() {
   async function handleLogin(u) {
     setUser(u);
     setAppLoading(true);
-    await refreshAll();
+    const data = await refreshAll();
     setAppLoading(false);
+    const welcomed = localStorage.getItem('leanup_welcomed_' + u.id);
+    const hasLogs = data.logs.some(l => l.userId === u.id);
+    if (!welcomed && !hasLogs) setShowWelcome(true);
   }
 
   if (!user) return React.createElement(AuthScreen, { onLogin: handleLogin });
@@ -1334,7 +1388,16 @@ function App() {
   const isAdmin = user.role === 'admin';
   const currentUser = { ...user, ...(users.find(u2 => u2.id === user.id) || {}) };
 
+  function dismissWelcome() {
+    localStorage.setItem('leanup_welcomed_' + user.id, '1');
+    setShowWelcome(false);
+  }
+
   return React.createElement('div', { className: 'app' },
+    showWelcome && React.createElement(WelcomeModal, {
+      onDismiss: dismissWelcome,
+      onGoWeighIn: () => { dismissWelcome(); setTab('Weigh-In'); }
+    }),
     React.createElement(TopBar, { user: currentUser, onLogout: () => { setUser(null); setTab('Dashboard'); }, tab, setTab, isAdmin }),
     React.createElement('div', { className: 'content' },
       tab === 'Dashboard'   && React.createElement(Dashboard,   { user: currentUser, contest, logs, users, isAdmin }),
